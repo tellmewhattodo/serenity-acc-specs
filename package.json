@@ -1,0 +1,16 @@
+{
+  "name": "serenity-acc-specs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Serenity-ACC 认知容器标准（Specs）— 宿主无关的认知容器语义标准：工具契约 + 拦截缝 + 核心 loop 注入内容 + CCC 结构约定 + skill 兼容基线",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "serenity",
+    "acc",
+    "ccc",
+    "cognitive-container",
+    "specs",
+    "standard"
+  ]
+}
