@@ -4,6 +4,25 @@
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
 > **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。二者已完成一致性核对（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
+> **仓库**：[github.com/tellmewhattodo/serenity-acc-specs](https://github.com/tellmewhattodo/serenity-acc-specs)（公开标准仓库）
+
+---
+
+## 目录
+
+- §0 标准目标与不变量（I1–I5）
+- §1 术语
+- §2 CCC 结构约定（宿主无关）
+- §3 工具契约（宿主无关）
+- §4 核心 loop 注入规范（5 块，**重点**）
+- §5 拦截缝语义
+- §6 激活协议
+- §7 skill 格式兼容基线
+- §8 适配层要求（checklist）
+- §9 错误契约
+- §10 标准演化
+- 附录 A：osp/dsp 实现一致性核对矩阵
+- 附录 B：工程实现标准（DSH Plugin 开发标准）
 
 ---
 
@@ -431,3 +450,13 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 | §9 错误类 | 13 类 | 13 类（同） | ✅ |
 
 **核对结论**：osp 与 dsp 在 §4 注入内容上**逐字对齐**（CCE 块完全一致；ACC/Constraints/Session 仅动态字段差异）；§3 工具集与 §5 拦截缝语义等价。本标准是二者的公共语义提取，pi-serenity-plugin 按此实现即可三端对齐。
+
+---
+
+## 附录 B：工程实现标准（DSH Plugin 开发标准）
+
+面向实现者的工程规范——在具体宿主上落地 ACC 时的插件开发标准（当前以 DSH 运行时为准绳，osp/pi 参照语义对齐）：
+
+- 全文：`docs/plugin-development-standard.md`（DSH Plugin 开发标准 v1.0，A–G 七节：插件本体 / 包声明 / 工具定义 / 拦截缝 / 安装分发 / 构建 / 测试，各节带官方出处）
+
+> 附录 A 定义**语义标准**（宿主无关），附录 B 定义**工程标准**（实现导向）——二者互补：先对齐语义（附录 A），再按工程规范落地（附录 B）。
