@@ -1,9 +1,16 @@
 # Changelog
 
-## v1.0.1 (2026-08-15)
+## v1.1.0 (2026-08-15)
 
 - 新增 `docs/acc-story.md`：记录 ACC 层完整故事（opencode 起源 / ACC-CCC 模型 / dsp 独立实现 / 标准化 / pi 实现 / 当前全景 / 设计哲学 / 时间线）。
 - README 目录与附录新增“附录 C：ACC 层故事”。
+- 标准状态更新为 v1.1：纳入 S134/S135/S136 后的 ACC 层演进——
+  - localstore 存储规范（CCC 根 `localstore.json`，credentials/config 分节，gitTrack 策略）
+  - loop guide 与 EAP 化轮次提示词
+  - EAP 块 / 运行时状态动态块（safe-mode、localstore git 策略）
+  - 跨平台路径守卫（Windows 跨盘逃逸阻断）与 `quotepath`
+  - SESSION 跟踪内存化（活跃会话不落盘，从 events 恢复）
+  - dsp/osp 工具行为全面对齐（session / cc-fs / cc_git / acc_kit / acc_msm / loop）
 
 ## v1.0.0 (2026-08-09)
 

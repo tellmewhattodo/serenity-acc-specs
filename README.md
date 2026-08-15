@@ -1,6 +1,6 @@
-# Serenity-ACC 认知容器标准（Specs v1.0）
+# Serenity-ACC 认知容器标准（Specs v1.1）
 
-> **状态**：v1.0 定稿（2026-08-09，S123）
+> **状态**：v1.1 定稿（2026-08-15，承接 S123 v1.0 + S134/S135/S136 演进）
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
 > **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。二者已完成一致性核对（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
@@ -424,7 +424,8 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ## 10. 标准演化
 
-- **版本**：v1.0（2026-08-09，S123 定稿）
+- **版本**：v1.1（2026-08-15，承接 S123 v1.0 定稿）
+- **v1.1 新增/确认**：localstore 存储规范、loop guide 使用指引、EAP 块、运行时状态动态块（safe-mode / localstore git 策略）、跨平台路径守卫、`quotepath`、SESSION 内存化与恢复语义、dsp/osp 工具行为全面对齐（见 CHANGELOG）
 - **变更流程**：任何语义变更需三实现（osp/dsp/pi）对齐后更新；注入内容全文变更需显式记录版本
 - **实现对照**：见附录 A 一致性核对矩阵
 
