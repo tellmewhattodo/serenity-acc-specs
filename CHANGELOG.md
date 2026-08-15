@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.1 (2026-08-15)
+
+- 新增 `docs/acc-story.md`：记录 ACC 层完整故事（opencode 起源 / ACC-CCC 模型 / dsp 独立实现 / 标准化 / pi 实现 / 当前全景 / 设计哲学 / 时间线）。
+- README 目录与附录新增“附录 C：ACC 层故事”。
+
 ## v1.0.0 (2026-08-09)
 
 - 首个定稿版本。宿主无关的 Serenity-ACC 认知容器标准。
