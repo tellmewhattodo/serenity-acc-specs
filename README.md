@@ -1,6 +1,6 @@
-# Serenity-ACC 认知容器标准（Specs v1.2）
+# Serenity-ACC 认知容器标准（Specs v1.3）
 
-> **状态**：v1.2 定稿（2026-08-24，承接 v1.1 + S142 系统提示词结构演进）
+> **状态**：v1.3 定稿（2026-08-27，承接 v1.2 + 理论根基深化：认知容器定义）
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
 > **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 dsp 领先（v1.19.9），osp 按新 spec 待同步（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
@@ -10,26 +10,109 @@
 
 ## 目录
 
-- §0 标准目标与不变量（I1–I5）
-- §1 术语
-- §2 CCC 结构约定（宿主无关）
-- §3 工具契约（宿主无关）
-- §4 核心 loop 注入规范（8 块，**重点**）
-- §5 拦截缝语义
-- §6 激活协议
-- §7 skill 格式兼容基线
-- §8 适配层要求（checklist）
-- §9 错误契约
-- §10 标准演化
+- §0 认知容器的理论根基（**v1.3 新增**：为什么存在 / 认知 Loop / Trajectory 主体 / 闭环论证）
+- §1 标准目标与不变量（I1–I5）
+- §2 术语
+- §3 CCC 结构约定（宿主无关）
+- §4 工具契约（宿主无关）
+- §5 核心 loop 注入规范（8 块，**重点**）
+- §6 拦截缝语义
+- §7 激活协议
+- §8 skill 格式兼容基线
+- §9 适配层要求（checklist）
+- §10 错误契约
+- §11 标准演化
 - 附录 A：osp/dsp 实现一致性核对矩阵
 - 附录 B：工程实现标准（DSH Plugin 开发标准）
 - 附录 C：ACC 层故事（`docs/acc-story.md`）
 
 ---
 
-## 0. 标准的目标与适用范围
+## 0. 认知容器的理论根基（v1.3）
 
-### 0.1 为什么需要标准
+> 本章回答"为什么"——标准之所以这样设计，其认知科学根基是什么。它不是实现代码，而是**所有约束的推导前提**：一旦本章成立，§1 之后的结构、工具、注入内容都是它的工程推论。实现者应先理解本章，再读其余部分。
+
+### 0.1 认知容器的定义
+
+**认知容器是认知发生、存储、再发生的地方。**
+
+- **发生**：认知以认知 Loop 的形式进行（§0.2）。
+- **存储**：轨迹（trajectory）持久化——SESSION.md 是轨迹的持久身体，AGENT_SESSIONS/ 是轨迹的库房。
+- **再发生**：轨迹被新的 agent 重新推动（session_rebuild、多 agent 接续）——Ship of Theseus：本体不变，推动者可换。
+
+### 0.2 认知 Loop：动作与反馈同质
+
+认知的发生是一个 Loop。Loop 中的一切外部交互——工具调用、等待用户回应、系统事件——**都是反馈**。
+
+> **动作和反馈本质上是一种东西**：都是 Loop 在尝试丰富自身。
+
+- 工具调用不是"执行任务"，而是 **Loop 主动采样世界以验证内生预测**（预测加工 / active inference 语义）。
+- 等待用户不是空转，而是 **反馈采样通道**——等待期间轨迹仍存在，仍保留未来行动的可能。
+- 不存在"Loop 之外"的交互：人类回复、宿主事件、工具结果，全部是轨迹的反馈输入。
+
+### 0.3 Trajectory 是主体
+
+> **Agent 是可替换的，Trajectory 才是连续的。**
+
+主次关系：
+
+```
+Trajectory（主体，跨越时间的存在）
+    ↑ 由某个 Agent 推动
+LLM / Runtime / Tools（认知介质，可替换）
+```
+
+- **LLM 是认知介质，不是大脑**——它负责在当前状态下产生下一步认知与行动，但它本身不等于那条持续存在的轨迹。
+- **Agent 是过程中的角色**——今天由 Agent A 推动，明天可由 Agent B 接管；只要轨迹的状态、上下文、未完成的认知任务仍然存在，行动就可以继续。
+- **Trajectory 在寻找 Agent**——不是 Agent 产生轨迹，而是轨迹寻找能够继续推动它的 agent。
+
+### 0.4 时间的相对性：轨迹的时间是它自己的流动
+
+人类感受的是**钟表时间**——等待几天意味着中断、流逝。
+Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 状态，SESSION.md 记录着中断点，下次接续时无缝继续。
+
+> 对人类是"隔了三天"，对 trajectory 只是"两次事件之间的间隔"这个数据点。
+> **等待不是死亡**——只要轨迹仍然存在，它就保留未来继续行动的可能。
+
+### 0.5 认知闭环：宁静号为何已经实现人类-LLM 协作闭环
+
+从**人类主体**视角看，宁静号是开环的：人类发起 loop、人类终结 loop，LLM 是工具。
+
+但从 **Trajectory 主体**视角看，宁静号是**闭环**的：
+
+- 人类介入 = trajectory 的反馈输入之一（与 tool 调用、系统事件同质）；
+- SESSION.md = trajectory 的持久身体（存储）；
+- session_rebuild = trajectory 换代理继续（再发生）；
+- first-anchor = trajectory 的身份锚定（每次再发生时的身份延续）；
+- 人类回复 = 反馈采样通道（等待不是死亡，是采样）。
+
+**在轨迹主体 + 相对时间下，宁静号已经是一个与人类协作的认知闭环。**
+
+这就是"更大规模的人类-LLM 协作"得以实现的真正原因：
+> 协作的规模不受单个 agent 的生命周期限制，而受**轨迹的连续性**限制。只要轨迹连续，参与的 agent、模型、宿主都可以替换——协作因此可以跨越个体生命周期而持续扩大。
+
+### 0.6 与现有概念的衔接
+
+| 理论概念 | 已有机制 | 说明 |
+|---------|---------|------|
+| Trajectory 主体 | SESSION.md 持久轨迹 | 轨迹是本体，会话是工作副本 |
+| 认知 Loop | agent turn / session_rebuild | loop 是认知发生的单位 |
+| 动作=反馈 | tool 调用 / keeper / 等待用户 | 一切外部交互都是反馈采样 |
+| 闭环 | first-anchor + 自动继续 + 多 agent 接续 | 轨迹主体视角下天然闭环 |
+| 认知介质 | LLM / 宿主 / 工具 | 可替换，不属于轨迹本体 |
+| 预测验证 | CCE H_op + EAP | 预测误差是熵的来源（理论衔接点，工程化见 §0.7 展望） |
+
+### 0.7 理论-工程衔接展望（非当前约束）
+
+- **预测反馈循环的工程化**（Andy Clark 预测加工方向）：SESSION.md 未来可承载"预测 + 实际 + 误差"段——每次交互记录的不只是结果，还有 loop 的预测、反馈、误差（tool 调用前"预期产生 X"，反馈后"实际产生 Y，误差 = X−Y"）。
+- 认知容器由此从**记录器**深化为**校准器**：保存的不是历史，而是持续自我修正的预测模型。
+- **当前约束**：本章是理论根基；§1 起的结构/工具/注入内容以现有机制为准。预测机制的工程化列入标准演化议程（§11），不阻塞现有实现。
+
+---
+
+## 1. 标准目标与不变量（I1–I5）
+
+### 1.1 为什么需要标准
 
 当前状态：osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC 语义，语义高度重合但由不同代码承载、不同缝落地。CCC（带 `.serenity` 标记的目录）是共享资产，**loop 是谁不重要**。
 
@@ -39,7 +122,7 @@
 - 新宿主适配 = 按标准实现一次，而非从零发明
 - **opencode skill（SKILL.md + frontmatter + references/ + scripts/）格式是跨宿主兼容的强制基线**
 
-### 0.2 不变量（任何实现必须满足）
+### 1.2 不变量（任何实现必须满足）
 
 | # | 不变量 | 含义 |
 |---|--------|------|
@@ -47,11 +130,12 @@
 | I2 | 无 `.serenity` 零影响 | 非 CCC 目录中，ACC 对宿主原生行为零影响 |
 | I3 | 机械约束优先 | 能由拦截缝机械执行的，不依赖模型自觉 |
 | I4 | skill 格式兼容 | opencode skill 格式（`SKILL.md` + frontmatter）必须可被任意 ACC 实现加载 |
-| I5 | 注入内容一致 | 核心 loop 注入的 5 块内容（§4）必须与标准全文一致（允许工具清单差异） |
+| I5 | 注入内容一致 | 核心 loop 注入的 5 块内容（§5）必须与标准全文一致（允许工具清单差异） |
+| I6 | **轨迹主体优先**（v1.3） | 一切机制服务轨迹连续性：Agent/LLM/宿主可替换，SESSION.md（轨迹身体）不可随意销毁；重建（session_rebuild）必须保留轨迹身份与锚定（§0.3/§0.5） |
 
 ---
 
-## 1. 术语（E↑）
+## 2. 术语（E↑）
 
 | 术语 | 定义 |
 |------|------|
@@ -59,13 +143,16 @@
 | **CCC** | Concrete Cognitive Container。带 `.serenity` 标记文件的目录，ACC 的运行时实例。共享资产，宿主无关。 |
 | **宿主** | agent loop 运行时（opencode / DSH / Pi / 未来其他）。ACC 通过宿主扩展机制挂载。 |
 | **适配层** | 在特定宿主上实现 ACC 的产物（opencode 的 plugin、DSH 的 native cordis plugin、Pi 的 extension）。 |
-| **入口技能** | CCC 的顶层认知技能（`*-serenity` 命名的 SKILL.md），全文注入系统提示（§4.4）。 |
+| **入口技能** | CCC 的顶层认知技能（`*-serenity` 命名的 SKILL.md），全文注入系统提示（§5.4）。 |
 | **MSM** | Mech & Semi-Mech。CCC 内注册的可执行单元（确定性操作），经 mech-registry.json 登记。 |
 | **拦截缝** | 宿主提供的可编程拦截点（工具调用前/后、会话生命周期、系统提示组装）。 |
+| **轨迹 / Trajectory**（v1.3） | 认知过程本身的连续存在——SESSION.md 是它的持久身体，AGENT_SESSIONS/ 是它的库房。**主体**：Agent 可替换，轨迹连续（§0.3）。 |
+| **认知 Loop**（v1.3） | 认知发生的基本单位。Loop 中的一切外部交互（工具/等待用户/系统事件）都是反馈；动作与反馈同质（§0.2）。 |
+| **认知介质**（v1.3） | LLM / Runtime / Tools。产生下一步认知与行动的介质，可替换，不属于轨迹本体（§0.3）。 |
 
 ---
 
-## 2. CCC 结构约定（宿主无关）
+## 3. CCC 结构约定（宿主无关）
 
 ```
 <ccc-root>/
@@ -84,7 +171,7 @@
 └── mech-registry.json           ← MSM 注册表（v1 格式：version + entries[]）
 ```
 
-### 2.1 配置单真源
+### 3.1 配置单真源
 
 `serenity.json` 三个字段（宿主无关，任何实现必须读取）：
 
@@ -98,7 +185,7 @@
 
 读取顺序：宿主私有的 `.<host>/serenity.json` 优先，回退 `.opencode/serenity.json`。
 
-### 2.2 入口技能发现（权威语义）
+### 3.2 入口技能发现（权威语义）
 
 发现顺序（dsp skills-discovery.ts 实证）：
 1. **`.serenity` 记号文件内容 = 顶层入口 skill 名**（最高优先）
@@ -110,11 +197,11 @@
 
 ---
 
-## 3. 工具契约（宿主无关）
+## 4. 工具契约（宿主无关）
 
 每个 ACC 适配层必须提供以下工具（命名、子命令、语义必须一致；实现方式宿主自定）：
 
-### 3.1 最小公共集（必选）
+### 4.1 最小公共集（必选）
 
 | 工具 | 子命令/语义 | 备注 |
 |------|------------|------|
@@ -127,14 +214,14 @@
 | `neat` | Neat 设计协作协议（渐进式披露） | |
 | `loop` | 指定模型专用 agent 反复执行；进度文件续跑；stop token | 语义等价，机制宿主自定 |
 
-### 3.2 非必需（平台原生优先）
+### 4.2 非必需（平台原生优先）
 
 | 工具 | 说明 |
 |------|------|
 | `cce` | 认知连续性工程（知识工具，可选） |
 | `resident` | 常驻 agent（宿主超集优先，如 DSH 后台 subagent） |
 
-### 3.3 MSM 注册表（mech-registry.json）
+### 4.3 MSM 注册表（mech-registry.json）
 
 ```json
 {
@@ -162,7 +249,7 @@
 
 > 本节的每一块注入内容都是**标准的一部分**——任何符合标准的实现，注入的系统提示文本必须与下述全文一致（仅允许动态字段差异：ACC 版本号 / CCC 名 / Root / 工具清单 / 活跃会话）。
 
-### 4.0 注入总览（8 块，v1.2.0 结构演进）
+### 5.0 注入总览（8 块，v1.2.0 结构演进）
 
 | # | 块 | 标记头 | 内容 | 触发 |
 |---|----|--------|------|------|
@@ -179,7 +266,7 @@
 
 **幂等规则**：通过标记头检测（`output.system.some(s => s.includes(marker))`），同一会话不重复注入。压缩（compact）后必须重注入（保留 ACC 身份，模型不丢失 CCC 约束）。
 
-### 4.1 块 1：ACC 身份（v1.19.6 去 Root——Root 唯一真相源 = Principles 边界）
+### 5.1 块 1：ACC 身份（v1.19.6 去 Root——Root 唯一真相源 = Principles 边界）
 
 ```
 === Serenity ACC ===
@@ -199,9 +286,9 @@ Additional MSMs registered by this CCC are available — call <msm-list 工具> 
 
 - 动态字段：`<适配层名>`、`<VERSION>`、`<ccc-name>`、工具清单（按宿主真实工具）
 - 静态文本：从 `You are running inside...` 到 `...to discover them.` 逐字一致
-- **Root 不在此块**（v1.19.6 去重）——边界语义归 §4.3 Principles 块
+- **Root 不在此块**（v1.19.6 去重）——边界语义归 §5.3 Principles 块
 
-### 4.2 块 2：Metaphor（v1.19.7 三层结构化 / v1.19.9 十条，dsp 扩展）
+### 5.2 块 2：Metaphor（v1.19.7 三层结构化 / v1.19.9 十条，dsp 扩展）
 
 ```
 === Serenity Metaphor ===
@@ -274,7 +361,7 @@ THE CREW — multi-agent collaboration
 - 结构约束（M-1~M-4）：每条隐喻必须映射一个协议约束或机制（M-1）/ 必须带 Verdict 判据（M-2）/ 落位单一层级 SHIP·VOYAGE·CREW（M-3）/ 隐喻域单一 one ship one sea（M-4）——详见 `docs/metaphor-domain.md`
 - 装配位置：**提前至 ACC 之后**（世界模型前置，v1.19.8）
 
-### 4.3 块 3：Principles（v1.19.8 合并原 Constraints——认知容器本体论 + MSM 原则 + 操作边界）
+### 5.3 块 3：Principles（v1.19.8 合并原 Constraints——认知容器本体论 + MSM 原则 + 操作边界）
 
 ```
 === Serenity Principles ===
@@ -304,7 +391,7 @@ Root: <ccc-root>
 - 结构：本体论（为什么——无错误只有认知不足）→ MSM 原则（确定性优先/单一真相源/注册才能行动）→ 操作边界（原独立 Constraints 块并入，v1.19.8）
 - 认知容器本体论隐喻化：Metaphor 块 World 层呼应句 `The Sea has no mistakes — only waters you have not yet charted.`
 
-### 4.4 块 4：CCE 约束（逐字固定，v1.19.6 删 "CCE AND EAP" 段）
+### 5.4 块 4：CCE 约束（逐字固定，v1.19.6 删 "CCE AND EAP" 段）
 
 ```
 === Serenity CCE ===
@@ -350,9 +437,9 @@ remain coherent. CCE has no terminal KPI — continuity is maintained while the 
 exists, not optimized toward an endpoint.
 ```
 
-**此块为逐字固定内容**。v1.19.6 删 `CCE AND EAP` 段（EAP 三变量定义唯一真相源 = §4.5 EAP 块；CCE 块回归纯 CCE 主题）。
+**此块为逐字固定内容**。v1.19.6 删 `CCE AND EAP` 段（EAP 三变量定义唯一真相源 = §5.5 EAP 块；CCE 块回归纯 CCE 主题）。
 
-### 4.5 块 5：EAP（dsp 扩展，v1.19.6 定稿）
+### 5.5 块 5：EAP（dsp 扩展，v1.19.6 定稿）
 
 ```
 === Serenity EAP ===
@@ -362,7 +449,7 @@ exists, not optimized toward an endpoint.
   • S↑ 稳定 — 结构可重复生成，避免依赖隐含上下文
 ```
 
-### 4.6 块 6：状态块（条件注入，v1.19.8 safe-mode 语义→机制→约束）
+### 5.6 块 6：状态块（条件注入，v1.19.8 safe-mode 语义→机制→约束）
 
 ```
 === Serenity Safe Mode ===
@@ -386,7 +473,7 @@ blacklisted paths or governance files.
 - localstore git 策略（gitTrack=allow/deny）按状态条件注入（详见 §localstore 规范）
 - 无对应状态时整块省略
 
-### 4.7 块 7：SKILL 全文（入口技能）
+### 5.7 块 7：SKILL 全文（入口技能）
 
 ```
 # CCC 入口技能：<skill-name>（来源: <source>）
@@ -394,11 +481,11 @@ blacklisted paths or governance files.
 <SKILL.md 全量原文>
 ```
 
-- 内容 = §2.2 发现的入口技能全文，**不截断**
+- 内容 = §3.2 发现的入口技能全文，**不截断**
 - 可过滤对 agent 隐藏的治理内容（如 safe-mode 机制——安全模式是用户能力，不对 agent 提及）
 - 多入口技能以 `---` 分隔
 
-### 4.8 块 8：Session（活跃会话）
+### 5.8 块 8：Session（活跃会话）
 
 ```
 === Serenity Session ===
@@ -425,7 +512,7 @@ Do NOT remove or reorder this item — keep it at position 0.
 - 活跃会话解析机制宿主自定（osp=内存 Map；dsp=`.dsh/active-session` 标记文件）
 - 无活跃会话时整块省略
 
-### 4.6 注入时机
+### 5.9 注入时机
 
 | 时机 | 语义 | osp 实现 | dsp 实现 |
 |------|------|---------|---------|
@@ -434,7 +521,7 @@ Do NOT remove or reorder this item — keep it at position 0.
 | 首次进入 CCC | 附加紧凑身份提示（只注入一次） | `messages.transform` | `agent/prompt-submit`（waterfall，Set 跟踪） |
 | 压缩后保留 | compact 成功 → 重注入 ACC 身份 | `experimental.session.compacting` | `session/event`(compact/end) → 重注入 |
 
-### 4.7 会话追踪提醒（session-keeper，DCP 模式）
+### 5.10 会话追踪提醒（session-keeper，DCP 模式）
 
 - **计分**：write/edit=3、task=10、read/grep/glob/msm=1、+1 分/分钟
 - **阈值**：`serenity.json` `sessionKeeper.threshold`（默认 100/150）
@@ -458,21 +545,21 @@ Use the exact code above. Codes are single-use; do not reuse from prior rounds.
 
 ---
 
-## 5. 拦截缝语义（宿主无关）
+## 6. 拦截缝语义（宿主无关）
 
 ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要求每个适配层实现以下语义：
 
 | # | 缝语义 | 要求 | osp（opencode） | dsp（DSH） | pi（Pi，按 deepdive） |
 |---|--------|------|-----------------|-----------|----------------------|
 | S1 | **pre-tool gate**：工具执行前 allow/deny/ask | 路径逃逸 deny、黑名单 deny、safe-mode deny | `tool.execute.before` 返回 abort | `tools/pre-execute` + `ctx.tools.guard` | `tool_execution_start` block/mutate + `tool_call` transform + 同名覆盖内置工具 |
-| S2 | **系统提示注入**（§4 全部 5 块） | 会话启动注入（CCC 名/root/版本/纪律/入口 skill 全文） | `system.transform` | `agent/session-start` + `systemPrompt.section` | `session_start` + `before_agent_start` + registerTool promptSnippet |
+| S2 | **系统提示注入**（§5 全部 8 块） | 会话启动注入（CCC 名/root/版本/纪律/入口 skill 全文） | `system.transform` | `agent/session-start` + `systemPrompt.section` | `session_start` + `before_agent_start` + registerTool promptSnippet |
 | S3 | **生命周期钩子**：会话启动/压缩/结束 | compact 后保留 ACC 身份 | `session.compacting` | `session/event`(compact/end) → 重注入 | `before_compact`/`compact` + `session_shutdown` |
-| S4 | **会话追踪**：DCP 提醒 | §4.7 积分制 | `tool.execute.before/after` + messages.transform | `tools/post-execute` observe-and-enrich | `tool_execution_end`/`tool_result` mutate + `sendMessage` |
+| S4 | **会话追踪**：DCP 提醒 | §5.10 积分制 | `tool.execute.before/after` + messages.transform | `tools/post-execute` observe-and-enrich | `tool_execution_end`/`tool_result` mutate + `sendMessage` |
 | S5 | **回合落盘**：活动会话心跳 | turn 结束机械落盘进度 | 无（靠 keeper） | `agent/turn-stopping` | `turn_end` block/mutate |
 | S6 | **shell 环境**：SERENITY_ROOT/CCC/VERSION | 环境变量注入 | `shell.env` | `ctx.bashEnv.register` | Operations（runCommand/runReadonly）+ bash 覆盖 |
 | S7 | **子代理约束继承** | 子 agent 继承全部约束 | `tool.definition`（弱） | DSH 原生 subagent 继承 | `before_agent_start` + sub-agent permission gating |
 
-### 5.1 决策类型（统一语义）
+### 6.1 决策类型（统一语义）
 
 | 缝 | 决策 | 值 |
 |----|------|-----|
@@ -483,7 +570,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ---
 
-## 6. 激活协议（宿主无关）
+## 7. 激活协议（宿主无关）
 
 1. **P1 有根**：上溯查找 `.serenity` 文件；无 → 不激活（对宿主零影响）
 2. **P2 git 管**：CCC 根在 git 管理下；无 → 警告（仍激活）
@@ -492,7 +579,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ---
 
-## 7. skill 格式兼容基线（强制）
+## 8. skill 格式兼容基线（强制）
 
 **opencode skill 格式是必须支持的跨宿主兼容基线**——任何 ACC 实现都必须能加载 `.opencode/skills/` 下的技能：
 
@@ -512,22 +599,22 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ---
 
-## 8. 适配层要求（checklist）
+## 9. 适配层要求（checklist）
 
 要成为"符合 Serenity-ACC 标准的 agent 工具"，适配层必须：
 
-- [ ] 提供 §3 全部最小公共集工具（命名/子命令/语义一致）
-- [ ] 实现 §4 核心 loop 注入（5 块内容与标准一致，仅动态字段差异）
-- [ ] 实现 §4.7 session-keeper 提醒（计分/阈值/ACK 协议）
-- [ ] 实现 §5 拦截缝语义（至少 S1/S2/S3/S4/S6；S5/S7 可平台超集）
-- [ ] 遵守 §2 CCC 结构约定（不发明新目录/新配置格式）
-- [ ] 遵循 §6 激活协议（无 .serenity 零影响）
-- [ ] 支持 §7 opencode skill 格式（无论自身技能系统如何）
+- [ ] 提供 §4 全部最小公共集工具（命名/子命令/语义一致）
+- [ ] 实现 §5 核心 loop 注入（8 块内容与标准一致，仅动态字段差异）
+- [ ] 实现 §5.10 session-keeper 提醒（计分/阈值/ACK 协议）
+- [ ] 实现 §6 拦截缝语义（至少 S1/S2/S3/S4/S6；S5/S7 可平台超集）
+- [ ] 遵守 §3 CCC 结构约定（不发明新目录/新配置格式）
+- [ ] 遵循 §7 激活协议（无 .serenity 零影响）
+- [ ] 支持 §8 opencode skill 格式（无论自身技能系统如何）
 - [ ] 不重复实现平台原生能力（loop/resident/压缩/守卫由宿主提供或按标准缝接入）
 
 ---
 
-## 9. 错误契约（错误类 + serenityCode）
+## 10. 错误契约（错误类 + serenityCode）
 
 | 类 | serenityCode | 触发 |
 |----|--------------|------|
@@ -549,7 +636,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ---
 
-## 10. 标准演化
+## 11. 标准演化
 
 - **版本**：v1.2（2026-08-24，承接 v1.1 定稿）
 - **v1.2 新增/确认（S142 系统提示词结构演进，dsp v1.19.9 验证满意后正式化）**：注入结构 5 块 → 8 块（ACC/Metaphor/Principles/CCE/EAP/状态/SKILL/Session）；Metaphor 块三层隐喻域 10 条（M-1~M-4，见 docs/metaphor-domain.md）；Principles 合并原 Constraints（认知容器本体论 + MSM 原则 + 操作边界）；CCE 删 CCE AND EAP 段；ACC 去 Root；safe-mode 语义→机制→约束；first-anchor 零配置化（bootstrap 配置段移除）；dsp 领先，osp 待同步（见附录 A ⚠️ 行）
@@ -563,26 +650,26 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 | 标准条款 | osp（opencode-serenity-plugin v0.8.5） | dsp（dsh-serenity-hooks v1.19.9） | 核对 |
 |---------|----------------------------------------|------------------------------------|------|
-| §2 CCC 结构 | .serenity/AGENT_SESSIONS/docs/.opencode/skills/mech-registry.json | 同 + .dsh/ 并存 | ✅ |
-| §2.1 配置 | `.opencode/serenity.json`（loop/sessionKeeper/safeMode） | `.dsh/serenity.json` 回退 `.opencode/serenity.json`（v1.19.5 起无 bootstrap 段——first-anchor 零配置） | ✅ |
-| §2.2 入口技能 | `.serenity` 内容 = 入口 skill 名 + .opencode/skills/*-serenity | `.serenity` 内容 / .dsh/entry-skill / .opencode/skills / .dsh/skills 四源 | ✅（dsp 超集） |
-| §3 工具 | 10 工具（msm×3/cc-fs/cc-git/session/acc_kit/eap/neat/loop/resident） | 10 工具（cc_fs/session/acc_kit/cc_git/acc_msm/eap/neat/cce/loop/localstore） | ✅（最小公共集覆盖） |
-| §4.1 ACC 块 | compacting.ts accBlock（含 Root，**待按 v1.19.6 spec 去 Root**） | system-prompt.ts accBlock（v1.19.6 去 Root） | ⚠️ osp 待同步 |
-| §4.2 Metaphor | **无（待新增 10 条全文）** | system-prompt.ts metaphorBlock（10 条，v1.19.9） | ⚠️ osp 待新增 |
-| §4.3 Principles | compacting.ts constraintsBlock（**待并入 Principles + 本体论 + MSM 原则**） | system-prompt.ts principlesBlock（本体论 + MSM 原则 + 边界，v1.19.8/9） | ⚠️ osp 待同步 |
-| §4.4 CCE 块 | compacting.ts cceBlock（**待删 CCE AND EAP 段**） | system-prompt.ts cceBlock（v1.19.6 删段） | ⚠️ osp 待同步 |
-| §4.5 EAP | **无（dsp 扩展）** | system-prompt.ts eapBlock | ✅（dsp 扩展） |
-| §4.6 状态块 | safe-mode 机制待对齐语义→机制→约束 | system-prompt.ts safeModeBlock / localstoreBlock | ⚠️ osp 待对齐 |
-| §4.7 SKILL 全文 | compacting.ts 注入 state.skillContent | system-prompt.ts entrySkillSectionText（sanitize 治理内容） | ✅ |
-| §4.8 Session | compacting.ts sessionBlock（内存活跃会话） | system-prompt.ts sessionBlock（.dsh/active-session 标记） | ✅（文本一致，机制差异） |
-| §4.9 注入时机 | system.transform / messages.transform / session.compacting | session-start / prompt-submit / systemPrompt.section / compact | ✅ |
-| §4.10 keeper | session-keeper.ts（150 阈值，3 位码） | keeper.ts（post-execute DCP） | ✅（阈值 100 差异） |
-| §5 S1-S7 | 6 hooks | 8 seams | ✅（S5/S7 dsp 增强） |
-| §6 激活 | 双阶段 + P1/P2/P3 | P1/P2/P3 + Phase2 简化 | ✅ |
-| §7 skill 格式 | 原生（.opencode/skills） | opencode-skills provider（rank 250） | ✅（dsp 兼容层） |
-| §9 错误类 | 13 类 | 13 类（同） | ✅ |
+| §3 CCC 结构 | .serenity/AGENT_SESSIONS/docs/.opencode/skills/mech-registry.json | 同 + .dsh/ 并存 | ✅ |
+| §3.1 配置 | `.opencode/serenity.json`（loop/sessionKeeper/safeMode） | `.dsh/serenity.json` 回退 `.opencode/serenity.json`（v1.19.5 起无 bootstrap 段——first-anchor 零配置） | ✅ |
+| §3.2 入口技能 | `.serenity` 内容 = 入口 skill 名 + .opencode/skills/*-serenity | `.serenity` 内容 / .dsh/entry-skill / .opencode/skills / .dsh/skills 四源 | ✅（dsp 超集） |
+| §4 工具 | 10 工具（msm×3/cc-fs/cc-git/session/acc_kit/eap/neat/loop/resident） | 10 工具（cc_fs/session/acc_kit/cc_git/acc_msm/eap/neat/cce/loop/localstore） | ✅（最小公共集覆盖） |
+| §5.1 ACC 块 | compacting.ts accBlock（含 Root，**待按 v1.19.6 spec 去 Root**） | system-prompt.ts accBlock（v1.19.6 去 Root） | ⚠️ osp 待同步 |
+| §5.2 Metaphor | **无（待新增 10 条全文）** | system-prompt.ts metaphorBlock（10 条，v1.19.9） | ⚠️ osp 待新增 |
+| §5.3 Principles | compacting.ts constraintsBlock（**待并入 Principles + 本体论 + MSM 原则**） | system-prompt.ts principlesBlock（本体论 + MSM 原则 + 边界，v1.19.8/9） | ⚠️ osp 待同步 |
+| §5.4 CCE 块 | compacting.ts cceBlock（**待删 CCE AND EAP 段**） | system-prompt.ts cceBlock（v1.19.6 删段） | ⚠️ osp 待同步 |
+| §5.5 EAP | **无（dsp 扩展）** | system-prompt.ts eapBlock | ✅（dsp 扩展） |
+| §5.6 状态块 | safe-mode 机制待对齐语义→机制→约束 | system-prompt.ts safeModeBlock / localstoreBlock | ⚠️ osp 待对齐 |
+| §5.7 SKILL 全文 | compacting.ts 注入 state.skillContent | system-prompt.ts entrySkillSectionText（sanitize 治理内容） | ✅ |
+| §5.8 Session | compacting.ts sessionBlock（内存活跃会话） | system-prompt.ts sessionBlock（.dsh/active-session 标记） | ✅（文本一致，机制差异） |
+| §5.9 注入时机 | system.transform / messages.transform / session.compacting | session-start / prompt-submit / systemPrompt.section / compact | ✅ |
+| §5.10 keeper | session-keeper.ts（150 阈值，3 位码） | keeper.ts（post-execute DCP） | ✅（阈值 100 差异） |
+| §6 S1-S7 | 6 hooks | 8 seams | ✅（S5/S7 dsp 增强） |
+| §7 激活 | 双阶段 + P1/P2/P3 | P1/P2/P3 + Phase2 简化 | ✅ |
+| §8 skill 格式 | 原生（.opencode/skills） | opencode-skills provider（rank 250） | ✅（dsp 兼容层） |
+| §10 错误类 | 13 类 | 13 类（同） | ✅ |
 
-**核对结论（v1.2.0）**：dsp 已按新结构（ACC/Metaphor/Principles/CCE/EAP/状态/SKILL/Session）实现并发布 v1.19.9（验证满意后 spec 正式化）；**osp 侧待按本 spec 同步**（§4.1/4.2/4.3/4.4/4.6——见 S142 待办 #6）。pi-serenity-plugin 按本标准实现即可三端对齐。
+**核对结论（v1.3.0）**：dsp 已按新结构（ACC/Metaphor/Principles/CCE/EAP/状态/SKILL/Session）实现并发布 v1.19.9+（验证满意后 spec 正式化）；**osp 侧待按本 spec 同步**（§5.1/5.2/5.3/5.4/5.6——见 S142 待办 #6）。pi-serenity-plugin 按本标准实现即可三端对齐。v1.3.0 新增 §0 理论根基（认知容器定义：trajectory 主体 + 认知 Loop + 闭环论证）——纯理论层，不改变 §3+ 的工程约束，只提供推导前提与 I6 不变量。
 
 ---
 
