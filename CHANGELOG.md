@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.3.1 (2026-08-27)
+
+概念定义升级：**Session = Trajectory 的可重建载体**（S142 用户定义——宁静号 session 与 trajectory 同义/承载关系，用于 dsp v1.23.0 提示词全英化 + keeper 改名）：
+
+- **新增 §0.3.1 Session 是 Trajectory 的可重建载体**：
+  - Session = trajectory 的可重建载体：SESSION.md 是轨迹的持久身体（存储形态）；工作会话（dsh conversation / session_rebuild 产物）是轨迹的运行副本（再发生形态）
+  - 载体可重建，轨迹连续：session_rebuild 丢弃当前载体、新建载体承接同一 trajectory（Ship of Theseus：载体换新，本体不变）
+  - 同义视角：session 与 trajectory 指同一认知存在的两个面——连续体与其承载实例
+- **§2 术语表**：新增 `会话 / Session`（可重建载体）；修订 `轨迹 / Trajectory`（Agent 可替换、Session 载体可重建）
+- **§0.1 定义微调**：发生发生在载体（session）中；再发生时载体与推动者均可换
+- **I6 扩展**：Session（会话）是 Trajectory 的可重建载体——载体可丢弃重建，SESSION.md（轨迹身体）与轨迹身份不可随意销毁
+- **§5.2 Metaphor 第 7 条修订**（The Logbook）：SESSION.md is the trajectory's logbook — the persistent body of the voyage; sessions are rebuildable carriers / Discard the carrier, keep the logbook
+- **§5.10 会话追踪提醒改名 trajectory-keeper**：机制语义显式化（督促记录 SESSION.md——载体可丢但轨迹身体不可断更）；**新增机制预声明要求**（Session 块必须预声明 keeper 机制与 ACK 协议，机制先于提醒）；提醒文本统一（[TRAJECTORY-KEEPER] 前缀 + 全英正文）；改名兼容说明（ACK 码单次使用不跨会话，旧前缀零影响）
+- **§5.8 Session 块**：附 keeper 预声明 + 载体关系行
+
 ## v1.3.0 (2026-08-27)
 
 理论根基深化：认知容器的定义（S142，作者 yh 三个月构建后的理论反思 + 认知科学预测加工方向）：

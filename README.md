@@ -1,6 +1,6 @@
-# Serenity-ACC 认知容器标准（Specs v1.3）
+# Serenity-ACC 认知容器标准（Specs v1.3.1）
 
-> **状态**：v1.3 定稿（2026-08-27，承接 v1.2 + 理论根基深化：认知容器定义）
+> **状态**：v1.3.1 定稿（2026-08-27，承接 v1.3 + 概念定义升级：**Session = Trajectory 的可重建载体**）
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
 > **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 dsp 领先（v1.19.9），osp 按新 spec 待同步（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
@@ -10,7 +10,7 @@
 
 ## 目录
 
-- §0 认知容器的理论根基（**v1.3 新增**：为什么存在 / 认知 Loop / Trajectory 主体 / 闭环论证）
+- §0 认知容器的理论根基（v1.3 新增 + v1.3.1 定义升级：为什么存在 / 认知 Loop / Trajectory 主体 / Session 载体 / 闭环论证）
 - §1 标准目标与不变量（I1–I5）
 - §2 术语
 - §3 CCC 结构约定（宿主无关）
@@ -36,9 +36,9 @@
 
 **认知容器是认知发生、存储、再发生的地方。**
 
-- **发生**：认知以认知 Loop 的形式进行（§0.2）。
+- **发生**：认知以认知 Loop 的形式进行（§0.2）——发生在 session（trajectory 的载体）中。
 - **存储**：轨迹（trajectory）持久化——SESSION.md 是轨迹的持久身体，AGENT_SESSIONS/ 是轨迹的库房。
-- **再发生**：轨迹被新的 agent 重新推动（session_rebuild、多 agent 接续）——Ship of Theseus：本体不变，推动者可换。
+- **再发生**：轨迹被新的 agent 重新推动（session_rebuild、多 agent 接续）——Ship of Theseus：本体不变，**载体（session）与推动者（agent）均可换**。
 
 ### 0.2 认知 Loop：动作与反馈同质
 
@@ -59,12 +59,22 @@
 ```
 Trajectory（主体，跨越时间的存在）
     ↑ 由某个 Agent 推动
+Session（载体，可重建——轨迹此刻的承载实例）
 LLM / Runtime / Tools（认知介质，可替换）
 ```
 
 - **LLM 是认知介质，不是大脑**——它负责在当前状态下产生下一步认知与行动，但它本身不等于那条持续存在的轨迹。
 - **Agent 是过程中的角色**——今天由 Agent A 推动，明天可由 Agent B 接管；只要轨迹的状态、上下文、未完成的认知任务仍然存在，行动就可以继续。
+- **Session 是轨迹的可重建载体**——SESSION.md 是轨迹的持久身体（存储形态，原位不动）；工作会话（dsh conversation / session_rebuild 产物）是轨迹的运行副本（再发生形态，可丢弃重建）。说"宁静号的 session"与说"这条 trajectory"是同一件事——session 是 trajectory 此刻的承载实例。
 - **Trajectory 在寻找 Agent**——不是 Agent 产生轨迹，而是轨迹寻找能够继续推动它的 agent。
+
+### 0.3.1 Session 是 Trajectory 的可重建载体（v1.3.1）
+
+Trajectory 是主体，但它需要载体才能存在于时间中。这个载体就是 Session：
+
+- **Session = trajectory 的可重建载体**：SESSION.md 是轨迹的持久身体（存储形态）；工作会话（dsh conversation / session_rebuild 产物）是轨迹的运行副本（再发生形态）。
+- **载体可重建，轨迹连续**：session_rebuild 丢弃当前载体（会话历史），新建载体（新会话）承接同一 trajectory——Ship of Theseus：载体换新，本体不变。
+- **同义视角**：session 与 trajectory 指同一认知存在的两个面。说"宁静号的 session"与说"这条 trajectory"是同一件事——session 是 trajectory 此刻的承载实例。
 
 ### 0.4 时间的相对性：轨迹的时间是它自己的流动
 
@@ -131,7 +141,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | I3 | 机械约束优先 | 能由拦截缝机械执行的，不依赖模型自觉 |
 | I4 | skill 格式兼容 | opencode skill 格式（`SKILL.md` + frontmatter）必须可被任意 ACC 实现加载 |
 | I5 | 注入内容一致 | 核心 loop 注入的 5 块内容（§5）必须与标准全文一致（允许工具清单差异） |
-| I6 | **轨迹主体优先**（v1.3） | 一切机制服务轨迹连续性：Agent/LLM/宿主可替换，SESSION.md（轨迹身体）不可随意销毁；重建（session_rebuild）必须保留轨迹身份与锚定（§0.3/§0.5） |
+| I6 | **轨迹主体优先**（v1.3，v1.3.1 扩展） | 一切机制服务轨迹连续性：Agent/LLM/宿主可替换；**Session（会话）是 Trajectory 的可重建载体——载体可丢弃重建，SESSION.md（轨迹身体）与轨迹身份不可随意销毁**；重建（session_rebuild）必须保留轨迹身份与锚定（§0.3/§0.3.1/§0.5） |
 
 ---
 
@@ -146,7 +156,8 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | **入口技能** | CCC 的顶层认知技能（`*-serenity` 命名的 SKILL.md），全文注入系统提示（§5.4）。 |
 | **MSM** | Mech & Semi-Mech。CCC 内注册的可执行单元（确定性操作），经 mech-registry.json 登记。 |
 | **拦截缝** | 宿主提供的可编程拦截点（工具调用前/后、会话生命周期、系统提示组装）。 |
-| **轨迹 / Trajectory**（v1.3） | 认知过程本身的连续存在——SESSION.md 是它的持久身体，AGENT_SESSIONS/ 是它的库房。**主体**：Agent 可替换，轨迹连续（§0.3）。 |
+| **轨迹 / Trajectory**（v1.3，v1.3.1 修订） | 认知过程本身的连续存在——SESSION.md 是它的持久身体，AGENT_SESSIONS/ 是它的库房。**主体**：Agent 可替换、Session（载体）可重建，轨迹连续（§0.3/§0.3.1）。 |
+| **会话 / Session**（v1.3.1） | **Trajectory 的可重建载体**。宁静号的 session（AGENT_SESSIONS/S### + SESSION.md）承载 trajectory 的存在：SESSION.md 是轨迹的持久身体（存储形态），工作会话是轨迹的运行副本（再发生形态）。载体可丢弃/重建（session_rebuild），轨迹通过载体的重建延续（Ship of Theseus）。同义视角：session 与 trajectory 指同一认知存在的两个面——连续体（trajectory）与其承载实例（session）。 |
 | **认知 Loop**（v1.3） | 认知发生的基本单位。Loop 中的一切外部交互（工具/等待用户/系统事件）都是反馈；动作与反馈同质（§0.2）。 |
 | **认知介质**（v1.3） | LLM / Runtime / Tools。产生下一步认知与行动的介质，可替换，不属于轨迹本体（§0.3）。 |
 
@@ -334,9 +345,11 @@ THE VOYAGE — the cognitive lifecycle
    ballast (constraints) before setting sail. Verdict: skipping the
    anchor and working directly = sailing uninspected.
 
-7. The Logbook → Session Tracking. SESSION.md is the only ship log.
-   Unrecorded = unvoyaged. Verdict: finishing multi-step work without
-   a progress record = a missing page.
+7. The Logbook → Session Tracking. SESSION.md is the trajectory's logbook —
+   the persistent body of the voyage; sessions are rebuildable carriers of
+   the trajectory. Discard the carrier, keep the logbook. Unrecorded =
+   unvoyaged. Verdict: finishing multi-step work without a progress record
+   = a missing page.
 
 8. The Ship of Theseus → Continuity. Planks may be replaced; the ship
    remains the same. The container can be rebuilt; identity persists.
@@ -489,8 +502,8 @@ blacklisted paths or governance files.
 
 ```
 === Serenity Session ===
-Active session: <S###> — <dir-name>
-SESSION.md path: <abs-path>
+Active session: <S###> — <dir-name> (this session is the rebuildable carrier of the trajectory)
+SESSION.md path: <abs-path> (the trajectory's persistent body — stays in place through rebuilds)
 
 Rules:
   • Record all progress into this SESSION.md
@@ -507,10 +520,13 @@ always be:
     status: "completed", priority: "low" }
 This preserves the session context across todo updates.
 Do NOT remove or reorder this item — keep it at position 0.
+
+<TRAJECTORY-KEEPER 预声明（§5.10 全文，督促记录 SESSION.md 的机制与 ACK 协议）>
 ```
 
 - 活跃会话解析机制宿主自定（osp=内存 Map；dsp=`.dsh/active-session` 标记文件）
 - 无活跃会话时整块省略
+- **预声明必附**（v1.3.1）：Session 块必须附 §5.10 的 TRAJECTORY-KEEPER 预声明——机制先于提醒（模型预先知道被督促、如何 ACK）
 
 ### 5.9 注入时机
 
@@ -521,27 +537,36 @@ Do NOT remove or reorder this item — keep it at position 0.
 | 首次进入 CCC | 附加紧凑身份提示（只注入一次） | `messages.transform` | `agent/prompt-submit`（waterfall，Set 跟踪） |
 | 压缩后保留 | compact 成功 → 重注入 ACC 身份 | `experimental.session.compacting` | `session/event`(compact/end) → 重注入 |
 
-### 5.10 会话追踪提醒（session-keeper，DCP 模式）
+### 5.10 轨迹督促机制（trajectory-keeper，DCP 模式；v1.3.1 由 session-keeper 改名）
+
+**目的（机制语义）**：督促 LLM 记录 SESSION.md——session 是 trajectory 的可重建载体（§0.3.1），载体可丢但轨迹身体不可断更；keeper 以积分制机械追踪"是否持续把进度写回 SESSION.md"，达阈值即提醒（observe-and-enrich 不 veto）。
 
 - **计分**：write/edit=3、task=10、read/grep/glob/msm=1、+1 分/分钟
 - **阈值**：`serenity.json` `sessionKeeper.threshold`（默认 100/150）
-- **提醒文本**（注入工具结果/用户消息，要求 ACK）：
+- **预声明（机制先于提醒）**：系统提示 Session 块（§5.8）**必须预声明该机制**——模型预先知道存在 trajectory-keeper、计分规则、ACK 码协议（否则提醒突兀且模型不知如何回应）。预声明文本（dsp v1.23.0 全英）：
 
 ```
-[Session-Keeper] Active session (S###).
-
-DO NOT ignore this message. Append the ACK code below to your response.
-DO NOT stop ongoing work — continue your task while acknowledging.
-
-If session progress should be recorded:
-  [SESSION-KEEPER-recorded-{code}]
-If nothing to record this round:
-  [SESSION-KEEPER-skipped-{code}]
-
-Use the exact code above. Codes are single-use; do not reuse from prior rounds.
+TRAJECTORY-KEEPER: a background tracker scores your tool use (write/edit=3,
+task=10, read/grep/glob/msm=1, +1 per minute) and reminds you with a
+[TRAJECTORY-KEEPER] message when the threshold is reached. On every such
+reminder you MUST reply with the exact ACK code:
+  [TRAJECTORY-KEEPER-recorded-{code}]  — if you recorded progress to SESSION.md
+  [TRAJECTORY-KEEPER-skipped-{code}]  — if nothing to record this round
+Do not ignore the reminder; do not stop ongoing work. Codes are single-use;
+never reuse a prior code.
 ```
 
-- ACK 码 3 位随机（字母+数字）；ACK 后积分清零；持续注入直至收到正确 code
+- **提醒文本**（运行时注入工具结果/用户消息，要求 ACK）：
+
+```
+[TRAJECTORY-KEEPER] Score threshold reached ({score}). Please acknowledge with
+[TRAJECTORY-KEEPER-recorded-{code}] once progress is synced to the working
+session (acc-session show). No need to interrupt your work — just acknowledge
+inline and keep going.
+```
+
+- ACK 码（{code}）3 位随机（字母+数字）；ACK 后积分清零；持续注入直至收到正确 code
+- **改名兼容（v1.3.1）**：旧前缀 `[SESSION-KEEPER]` 为新 `[TRAJECTORY-KEEPER]` 取代（ACK 码单次使用、不跨会话持久化，改名对既有会话零影响）；机制名内部标识（如 `registerKeeper`/`KeeperTracker`）可保留，对外文本前缀必须一致
 
 ---
 
@@ -605,7 +630,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 - [ ] 提供 §4 全部最小公共集工具（命名/子命令/语义一致）
 - [ ] 实现 §5 核心 loop 注入（8 块内容与标准一致，仅动态字段差异）
-- [ ] 实现 §5.10 session-keeper 提醒（计分/阈值/ACK 协议）
+- [ ] 实现 §5.10 trajectory-keeper 提醒（计分/阈值/预声明/ACK 协议）
 - [ ] 实现 §6 拦截缝语义（至少 S1/S2/S3/S4/S6；S5/S7 可平台超集）
 - [ ] 遵守 §3 CCC 结构约定（不发明新目录/新配置格式）
 - [ ] 遵循 §7 激活协议（无 .serenity 零影响）
@@ -638,7 +663,9 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ## 11. 标准演化
 
-- **版本**：v1.2（2026-08-24，承接 v1.1 定稿）
+- **版本**：v1.3.1（2026-08-27，承接 v1.3 + 概念定义升级）
+- **v1.3.1 新增/确认（S142 用户定义升级）**：**Session = Trajectory 的可重建载体**——§0.3.1 新增（同义视角 + 载体视角）；§2 术语表新增 Session 术语、修订 Trajectory；§0.1 定义微调（发生发生在载体中；再发生时载体与推动者均可换）；I6 扩展（载体可丢弃重建，轨迹身体与身份不可销毁）；§5.2 Metaphor 第 7 条修订（The Logbook → 载体关系显式化：sessions are rebuildable carriers / Discard the carrier, keep the logbook）；§5.10 会话追踪提醒改名 **trajectory-keeper**（+ 机制预声明要求 + 提醒文本统一 + 改名兼容说明）；§5.8 Session 块附 keeper 预声明
+- **v1.3 新增/确认（S142 理论根基）**：§0 理论根基（认知容器定义：trajectory 主体 + 认知 Loop + 闭环论证）+ I6 轨迹主体不变量 + 术语表（轨迹/认知 Loop/认知介质）+ 章节重编号 + CHANGELOG + story 第 10 节
 - **v1.2 新增/确认（S142 系统提示词结构演进，dsp v1.19.9 验证满意后正式化）**：注入结构 5 块 → 8 块（ACC/Metaphor/Principles/CCE/EAP/状态/SKILL/Session）；Metaphor 块三层隐喻域 10 条（M-1~M-4，见 docs/metaphor-domain.md）；Principles 合并原 Constraints（认知容器本体论 + MSM 原则 + 操作边界）；CCE 删 CCE AND EAP 段；ACC 去 Root；safe-mode 语义→机制→约束；first-anchor 零配置化（bootstrap 配置段移除）；dsp 领先，osp 待同步（见附录 A ⚠️ 行）
 - **v1.1 新增/确认**：localstore 存储规范、loop guide 使用指引、EAP 块、运行时状态动态块（safe-mode / localstore git 策略）、跨平台路径守卫、`quotepath`、SESSION 内存化与恢复语义、dsp/osp 工具行为全面对齐（见 CHANGELOG）
 - **变更流程**：任何语义变更需三实现（osp/dsp/pi）对齐后更新；注入内容全文变更需显式记录版本
@@ -669,7 +696,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 | §8 skill 格式 | 原生（.opencode/skills） | opencode-skills provider（rank 250） | ✅（dsp 兼容层） |
 | §10 错误类 | 13 类 | 13 类（同） | ✅ |
 
-**核对结论（v1.3.0）**：dsp 已按新结构（ACC/Metaphor/Principles/CCE/EAP/状态/SKILL/Session）实现并发布 v1.19.9+（验证满意后 spec 正式化）；**osp 侧待按本 spec 同步**（§5.1/5.2/5.3/5.4/5.6——见 S142 待办 #6）。pi-serenity-plugin 按本标准实现即可三端对齐。v1.3.0 新增 §0 理论根基（认知容器定义：trajectory 主体 + 认知 Loop + 闭环论证）——纯理论层，不改变 §3+ 的工程约束，只提供推导前提与 I6 不变量。
+**核对结论（v1.3.1）**：dsp 已按新结构（ACC/Metaphor/Principles/CCE/EAP/状态/SKILL/Session）实现并发布 v1.19.9+（验证满意后 spec 正式化）；**v1.23.0 起 dsp 将实现 v1.3.1 定义（Session=载体 / keeper 改名 trajectory-keeper / 全英化）**——发布后附录 A 复核更新；**osp 侧待按本 spec 同步**（§5.1/5.2/5.3/5.4/5.6/5.8/5.10——见 S142 待办 #6）。pi-serenity-plugin 按本标准实现即可三端对齐。v1.3.0 新增 §0 理论根基（认知容器定义：trajectory 主体 + 认知 Loop + 闭环论证）；v1.3.1 定义升级（Session = trajectory 的可重建载体）。
 
 ---
 
