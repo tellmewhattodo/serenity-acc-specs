@@ -136,10 +136,13 @@
 ### 7.1 实验参与指南（CCC 侧快速开始）
 
 > 已有参考实现：dsh-serenity-hooks v1.26.12 pre-release 提供 `autotrajectory` 机制（默认关）。
-> **完整参与定义说明**（背景/目的/机制/验证/示例）：`dsh-serenity-plugin/docs/autotrajectory-experiment.md`（随插件源码公开）。CCC 参与三步：
+> **完整参与定义说明**（背景/目的/机制/验证/示例）：`dsh-serenity-plugin/docs/autotrajectory-experiment.md`（随插件源码公开）。
+> **实验包（一站式，推荐）**：本仓 `experiments/autotrajectory/`——`SKILL.md`（实验参与 skill，CCC 复制到 `.opencode/skills/` 即让 agent 理解实验）+ `scripts/autotrajectory-exp.ts`（一站式实验管理 MSM：无参 = 全报告 / init 初始化 / random 验证偏见内容）。
 
-1. **配置**：CCC 根 `.opencode/serenity.json` 加 `autotrajectory: { enabled: true, intervalHours: N, randomMsm: "...", session?: "S###" }`。
-2. **注册随机方向 MSM**：`acc_msm register auto_trajectory_random_basis_provider ...`（CCC 自己写——随机性归 CCC：用 CCC 自己的反馈信息来源，保证"足够随机"；dsp 只机械 exec 取 stdout）。
+CCC 参与三步（第一步可一键 `init`）：
+
+1. **初始化（一键）**：`acc_msm exec autotrajectory-exp init`——写配置（`autotrajectory: { enabled: true, intervalHours: N, biasProvider: "autotrajectory-bias.ts" }`）+ 生成偏见内容提供者脚本模板（CCC 根）。
+2. **实现偏见内容提供者**：编辑 `autotrajectory-bias.ts`，stdout 输出偏见内容（反事实方向/探索动机——用 CCC 自己的反馈信息来源保证"足够随机"；dsp 只直接运行脚本取 stdout，**不再经 mech-registry 注册 MSM**）；`acc_msm exec autotrajectory-exp random` 验证。
 3. **标记目标会话**：会话目录名加 `--auto` 后缀（`AGENT_SESSIONS/<date>--<desc>--auto/`）——只有带标志的轨迹走自主形态；可选在 SESSION.md 写「下一轮动机」段作自生偏见。
 
 **观察**：无人类活动满 `intervalHours` 且北京时间非高峰（缺省避开 8~18 点）→ 前台会话自动出现 `[自主轨迹唤起]` 消息（用户全程可见、可介入）。产出落 SESSION.md「自主探索日志」+ 预写「下一轮动机」。
