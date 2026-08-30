@@ -136,29 +136,19 @@ function runBiasProvider(root: string, providerRel: string): { text: string | nu
   return { text: null, error: '偏见内容提供者脚本无法运行（bun 与 node 均不可用）' }
 }
 
-/** 目标 SESSION.md：cfg.session（目录名/关键词匹配）或最近活跃（未完成 + mtime 最大） */
+/** 目标 SESSION.md：**session 必填**（S###/目录名匹配）——自动唤起不默认任何会话（CCC 日常多轨迹并行）；未配置/未命中 → null */
 function resolveTargetMd(root: string, cfg: AutoConfig): string | null {
+  if (!cfg?.session) return null
   const sessionsDir = join(root, 'AGENT_SESSIONS')
   if (!existsSync(sessionsDir)) return null
   const dirs = readdirSync(sessionsDir, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => join(sessionsDir, d.name))
-  if (cfg.session) {
-    for (const d of dirs) {
-      const md = join(d, 'SESSION.md')
-      if (existsSync(md) && basename(d).includes(cfg.session)) return md
-    }
-  }
-  let best: { md: string; mtime: number } | null = null
   for (const d of dirs) {
     const md = join(d, 'SESSION.md')
-    if (!existsSync(md)) continue
-    const content = readUtf8(md)
-    if (/\[\s*x\s*\]/i.test(content)) continue // 已完成的跳过
-    const t = statSync(md).mtimeMs
-    if (!best || t > best.mtime) best = { md, mtime: t }
+    if (existsSync(md) && basename(d).includes(cfg.session)) return md
   }
-  return best?.md ?? null
+  return null
 }
 
 function beijingHour(nowMs: number): number {
@@ -213,7 +203,10 @@ function check(root: string): string {
   }
 
   const md = resolveTargetMd(root, cfg ?? {})
-  if (md) {
+  if (!cfg?.session) {
+    lines.push('✗ 未配置 session（必填——自动唤起不默认任何会话，CCC 日常多轨迹并行）')
+    fail.push('session')
+  } else if (md) {
     const flag = basename(dirname(md)).endsWith(AUTO_SUFFIX)
     lines.push(`${flag ? '✓' : '✗'} 目标会话目录${flag ? '带' : '未带'} --auto 标志：${basename(dirname(md))}`)
     if (!flag) {
@@ -227,7 +220,7 @@ function check(root: string): string {
       lines.push(`· SESSION.md 无「下一轮动机」段（可选——纯偏见内容亦可）`)
     }
   } else {
-    lines.push('✗ 未找到目标 SESSION.md（AGENT_SESSIONS 无未完成会话）')
+    lines.push(`✗ 目标会话未命中：${cfg.session}（AGENT_SESSIONS 无匹配目录）`)
     fail.push('session')
   }
 
