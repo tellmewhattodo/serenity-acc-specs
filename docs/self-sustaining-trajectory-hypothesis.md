@@ -133,6 +133,17 @@
 
 **成功判据（建议）**：自主轮产出中有意义的比例 ≥ 阈值，且 H_op 维持在容器可运转水平；人类事后介入时产出确实加速了轨迹的整体推进。
 
+### 7.1 实验参与指南（CCC 侧快速开始）
+
+> 已有参考实现：dsh-serenity-hooks v1.26.12 pre-release 提供 `autotrajectory` 机制（默认关）。
+> **完整参与定义说明**（背景/目的/机制/验证/示例）：`dsh-serenity-plugin/docs/autotrajectory-experiment.md`（随插件源码公开）。CCC 参与三步：
+
+1. **配置**：CCC 根 `.opencode/serenity.json` 加 `autotrajectory: { enabled: true, intervalHours: N, randomMsm: "...", session?: "S###" }`。
+2. **注册随机方向 MSM**：`acc_msm register auto_trajectory_random_basis_provider ...`（CCC 自己写——随机性归 CCC：用 CCC 自己的反馈信息来源，保证"足够随机"；dsp 只机械 exec 取 stdout）。
+3. **标记目标会话**：会话目录名加 `--auto` 后缀（`AGENT_SESSIONS/<date>--<desc>--auto/`）——只有带标志的轨迹走自主形态；可选在 SESSION.md 写「下一轮动机」段作自生偏见。
+
+**观察**：无人类活动满 `intervalHours` 且北京时间非高峰（缺省避开 8~18 点）→ 前台会话自动出现 `[自主轨迹唤起]` 消息（用户全程可见、可介入）。产出落 SESSION.md「自主探索日志」+ 预写「下一轮动机」。
+
 ---
 
 ## 8. 状态与历史
