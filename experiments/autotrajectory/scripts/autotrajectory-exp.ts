@@ -6,6 +6,7 @@
  *   acc_msm exec autotrajectory-exp            → 一站式全报告（背景 + 就绪 + 状态 + 下一步）
  *   acc_msm exec autotrajectory-exp init       → 初始化实验（写配置 + 生成偏见提供者脚本模板）
  *   acc_msm exec autotrajectory-exp random     → 运行偏见提供者脚本，输出当前偏见内容（验证）
+ *   acc_msm exec autotrajectory-exp diag       → 唤起条件链诊断（--ccc <path> 指定；无参递归扫描 /home/yh 两层）
  *   acc_msm exec autotrajectory-exp doc        → 实验定义说明全文（SKILL.md）
  *   acc_msm exec autotrajectory-exp check      → 仅就绪度检查
  *   acc_msm exec autotrajectory-exp status     → 仅当前状态
@@ -14,6 +15,12 @@
  * 概念（用户拍板命名）：偏见内容提供者（bias provider）——CCC 根目录下一个脚本，
  * stdout 输出本轮唤起要注入的偏见内容（反事实方向/探索动机等）。tool 直接运行它；
  * 脚本缺失 → 报错要求实现（不再经 mech-registry 注册 MSM）。
+ *
+ * 轨迹焦点（topPrompt，v1.26.17）：CCC 定义 autotrajectory 时自己填写本轨迹核心焦点，
+ * 每次唤起最先注入（[轨迹焦点] 段）——稳定锚定防漂移，与偏见内容（每轮随机探索）互补。
+ *
+ * 状态查看：WebUI 设置面板「自主轨迹」区块（GET /serenity/autotrajectory）+「立即唤起」按钮
+ * （POST /serenity/autotrajectory {action:'wake'}，调试语义跳过窗口/间隔）——由插件提供，脚本不重复。
  *
  * 零 DSH 依赖，任何 CCC 可运行。环境：SERENITY_ROOT（acc_msm exec 注入）或 cwd 上溯 .serenity。
  */
@@ -63,6 +70,8 @@ interface AutoConfig {
   enabled?: boolean
   intervalHours?: number
   biasProvider?: string
+  /** 轨迹焦点（topPrompt，v1.26.17）：CCC 定义 autotrajectory 时自己填写——每次唤起最先注入（稳定锚防漂移） */
+  topPrompt?: string
   session?: string
   avoidWakeHours?: { start?: number; end?: number }
 }
@@ -186,6 +195,11 @@ function check(root: string): string {
     lines.push(`✓ enabled = true`)
     lines.push(`  intervalHours = ${cfg.intervalHours ?? 12}`)
     lines.push(`  biasProvider = ${cfg.biasProvider?.trim() || DEFAULT_BIAS_PROVIDER}`)
+    if (cfg.topPrompt?.trim()) {
+      lines.push(`✓ topPrompt（轨迹焦点）已定义: ${cfg.topPrompt.trim().slice(0, 60)}${cfg.topPrompt.trim().length > 60 ? '…' : ''}（每次唤起最先注入，锚定防漂移）`)
+    } else {
+      lines.push(`⚠ topPrompt（轨迹焦点）未定义——建议 CCC 定义 autotrajectory 时填写本轨迹核心焦点（实验观察：无焦点锚定，多轮唤起轨迹易漂移腐化）`)
+    }
     if (cfg.session) lines.push(`  session = ${cfg.session}`)
     const avoid = cfg.avoidWakeHours
     lines.push(`  唤起窗口避开北京 ${avoid?.start ?? 8}~${avoid?.end ?? 18} 点（用量峰谷省钱）`)
@@ -237,7 +251,7 @@ function status(root: string): string {
     lines.push('autotrajectory 未启用（enabled=false 或未配置）——零资源占用')
     return lines.join('\n')
   }
-  lines.push(`配置: intervalHours=${cfg.intervalHours ?? 12} | biasProvider=${cfg.biasProvider?.trim() || DEFAULT_BIAS_PROVIDER}${cfg.session ? ` | session=${cfg.session}` : ''}`)
+  lines.push(`配置: intervalHours=${cfg.intervalHours ?? 12} | biasProvider=${cfg.biasProvider?.trim() || DEFAULT_BIAS_PROVIDER}${cfg.session ? ` | session=${cfg.session}` : ''}${cfg.topPrompt?.trim() ? ' | topPrompt ✓' : ''}`)
   const md = resolveTargetMd(root, cfg)
   if (!md) {
     lines.push('目标会话：未找到')
@@ -260,14 +274,19 @@ function guide(): string {
     '',
     '① 初始化（一键）：acc_msm exec autotrajectory-exp init',
     '   ——写配置（.opencode/serenity.json autotrajectory 段）+ 生成偏见提供者脚本模板（CCC 根 autotrajectory-bias.ts）',
-    '② 实现偏见内容提供者：编辑 autotrajectory-bias.ts，stdout 输出偏见内容（反事实方向/探索动机，',
+    '② **定义轨迹焦点（topPrompt）**：编辑配置中的 topPrompt——**CCC 自己填写**本轨迹的核心',
+    '   目标/纪律/质量要求（示例："持续深化某领域认知，产出可重建的结论与决策记录"）。',
+    '   它会在每次唤起时最先注入（[轨迹焦点] 段），作为稳定焦点锚定 trajectory 防漂移——',
+    '   **实验观察：无焦点锚定时多轮唤起轨迹腐化严重（焦点丢失）**。勿留空。',
+    '③ 实现偏见内容提供者：编辑 autotrajectory-bias.ts，stdout 输出偏见内容（反事实方向/探索动机，',
     '   用本 CCC 自己的信息来源保证"足够随机"）；acc_msm exec autotrajectory-exp random 验证',
-    '③ 标记目标会话：目录名加 --auto 后缀 AGENT_SESSIONS/<date>--<desc>--auto/',
+    '④ 标记目标会话：目录名加 --auto 后缀 AGENT_SESSIONS/<date>--<desc>--auto/',
     '   （可选）该 SESSION.md 写「下一轮动机」段作自生偏见',
-    '④ 验证就绪：acc_msm exec autotrajectory-exp（一站式报告应为 ✅）',
-    '⑤ 观察：无人类活动满 intervalHours 且北京非高峰 → 前台会话自动出现 [自主轨迹唤起]',
+    '⑤ 验证就绪：acc_msm exec autotrajectory-exp（一站式报告应为 ✅；topPrompt 未定义会 ⚠ 提示）',
+    '⑥ 观察：无人类活动满 intervalHours 且北京非高峰 → 前台会话自动出现 [自主轨迹唤起]',
     '   产出落 SESSION.md「自主探索日志」+ 预写「下一轮动机」',
     '',
+    '分工：焦点（topPrompt）= 稳定锚，每轮不变；偏见（biasProvider）= 随机探索方向，每轮不同——两者都由 CCC 定义。',
     '完整定义见 SKILL.md（acc_msm exec autotrajectory-exp doc）',
   ].join('\n')
 }
@@ -296,11 +315,16 @@ function init(root: string): string {
     enabled: true,
     intervalHours: 12,
     biasProvider: DEFAULT_BIAS_PROVIDER,
+    // 轨迹焦点（topPrompt）：**CCC 自己定义**本轨迹的核心目标/纪律/质量要求——每次唤起最先
+    // 注入，作为稳定焦点锚定 trajectory，防止多轮自主唤起中焦点丢失（腐化）。请按本 CCC
+    // 的轨迹目标改写，不要留空（留空 = 唤起无焦点锚定，轨迹易漂移）。
+    topPrompt: '本轨迹的核心焦点：<CCC 填写——例如：持续深化某领域认知，产出可重建的结论与决策记录>',
     ...at,
   }
   writeFileSync(cfgPath, `${JSON.stringify(merged, null, 2)}\n`)
   out.push(`✓ 配置写入: ${cfgPath}`)
   out.push(`  autotrajectory = ${JSON.stringify(merged.autotrajectory)}`)
+  out.push(`  ⚠ 请编辑 topPrompt 为**本 CCC 的轨迹焦点**（现为占位——每次唤起最先注入，防轨迹漂移，勿留空）`)
 
   // ② 生成偏见提供者脚本模板
   const scriptAbs = biasProviderPath(root, DEFAULT_BIAS_PROVIDER)
@@ -311,7 +335,7 @@ function init(root: string): string {
     out.push(`✓ 已生成偏见提供者脚本模板: ${DEFAULT_BIAS_PROVIDER}（编辑它，stdout 输出偏见内容）`)
   }
 
-  out.push('', '下一步：③ 标记目标会话 --auto 后缀 → ④ acc_msm exec autotrajectory-exp 验证就绪')
+  out.push('', '下一步：② 编辑配置 topPrompt（轨迹焦点——CCC 自己填写本轨迹核心目标，勿留空）→ ③ 标记目标会话 --auto 后缀 → ⑤ acc_msm exec autotrajectory-exp 验证就绪')
   return out.join('\n')
 }
 
