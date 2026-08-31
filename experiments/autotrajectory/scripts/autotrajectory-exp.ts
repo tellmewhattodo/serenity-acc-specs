@@ -343,6 +343,121 @@ function all(root: string): string {
   return [BACKGROUND, ready, '', stat, '', next.join('\n'), '', guide()].join('\n')
 }
 
+/** 唤起条件链诊断（单 CCC）——逐条件当前值 + 阻断点 + 修复建议 */
+function diagCcc(root: string): string {
+  const now = Date.now()
+  const lines: string[] = [`═══ 自主轨迹唤起诊断：${basename(root)}（${root}）═══`]
+  const cfg = loadConfig(root)
+  const blocks: string[] = []
+  const suggest: string[] = []
+
+  // ① enabled（定时器是否启动）
+  if (!cfg) {
+    blocks.push('✗ autotrajectory 未配置（定时器不启动）')
+    suggest.push('配置：.opencode/serenity.json 加 autotrajectory 段（autotrajectory-exp init 可生成）')
+  } else if (!cfg.enabled) {
+    blocks.push('✗ enabled = false（定时器不启动）')
+    suggest.push('置 enabled: true')
+  } else {
+    blocks.push('✓ enabled = true')
+  }
+  if (cfg) {
+    blocks.push(`  配置: intervalHours=${cfg.intervalHours ?? 12} | biasProvider=${cfg.biasProvider?.trim() || DEFAULT_BIAS_PROVIDER}${cfg.session ? ` | session=${cfg.session}` : ' | session=未配置'}`)
+    const avoid = cfg.avoidWakeHours
+    blocks.push(`  窗口避开北京 ${avoid?.start ?? 8}~${avoid?.end ?? 18} 点`)
+  }
+
+  // ② session（必填——不默认任何会话）
+  const md = resolveTargetMd(root, cfg ?? {})
+  if (!cfg?.session) {
+    blocks.push('✗ session 未配置（必填——自动唤起不默认任何会话）')
+    suggest.push('配置 session: "S###"（目标会话 S###/目录名）')
+  } else if (!md) {
+    blocks.push(`✗ session=${cfg.session} 未命中（AGENT_SESSIONS 无匹配目录）`)
+    suggest.push('确认目标会话存在（目录名含该关键字）')
+  } else {
+    blocks.push(`✓ session=${cfg.session} 命中（${basename(dirname(md))}）`)
+  }
+
+  // ③ --auto 会话标志
+  if (md) {
+    const flag = basename(dirname(md)).endsWith(AUTO_SUFFIX)
+    if (flag) {
+      blocks.push('✓ 会话目录带 --auto 标志')
+    } else {
+      blocks.push(`✗ 会话目录无 --auto 标志（${basename(dirname(md))}）`)
+      suggest.push('目录名加 --auto 后缀：AGENT_SESSIONS/<date>--<desc>--auto/')
+    }
+  }
+
+  // ④ mtime 间隔（无人类活动时长）
+  if (md) {
+    const mtime = statSync(md).mtimeMs
+    const idle = (now - mtime) / 3600_000
+    const interval = Math.max(1, cfg?.intervalHours ?? 12)
+    if (idle >= interval) blocks.push(`✓ 距上次轨迹活动 ${idle.toFixed(1)}h ≥ 阈值 ${interval}h`)
+    else blocks.push(`⏸ 距上次轨迹活动 ${idle.toFixed(1)}h < 阈值 ${interval}h（等待中——不满足不唤起）`)
+  }
+
+  // ⑤ 北京时间唤起窗口
+  const h = beijingHour(now)
+  const inWin = inAllowedWindow(now, cfg?.avoidWakeHours)
+  blocks.push(`${inWin ? '✓' : '⏸'} 当前北京 ${h} 点——${inWin ? '在唤起窗口内' : '高峰避开中（缺省 8~18，用量峰谷省钱）'}`)
+
+  // ⑥ 偏见内容提供者脚本
+  if (cfg?.enabled) {
+    const provider = cfg.biasProvider?.trim() || DEFAULT_BIAS_PROVIDER
+    const bias = runBiasProvider(root, provider)
+    if (bias.error) {
+      blocks.push(`✗ 偏见脚本: ${bias.error}`)
+      suggest.push('实现偏见脚本（autotrajectory-exp init 生成模板后编辑）')
+    } else {
+      blocks.push(`✓ 偏见脚本可运行（输出: ${bias.text ?? '（空）'}）`)
+    }
+  }
+
+  lines.push(...blocks.map((b) => `  ${b}`))
+  lines.push('')
+  const bad = blocks.filter((b) => b.startsWith('✗'))
+  if (bad.length === 0) {
+    lines.push('✅ 唤起条件全部满足——等待下一个 10min tick 自动唤起（前台可见）')
+  } else {
+    lines.push(`⚠️ 阻断点 ${bad.length} 项（全部满足才唤起）：`)
+    for (const s of suggest) lines.push(`  → ${s}`)
+  }
+  return lines.join('\n')
+}
+
+/** diag：--ccc <path> 指定目标 CCC；无参扫描常见 CCC 根（配置了 autotrajectory 的优先） */
+function diag(): string {
+  const argIdx = process.argv.indexOf('--ccc')
+  if (argIdx >= 0 && process.argv[argIdx + 1]) {
+    return diagCcc(resolve(process.argv[argIdx + 1]!))
+  }
+  const roots = new Set<string>()
+  const envRoot = process.env.SERENITY_ROOT
+  if (envRoot && existsSync(join(envRoot, '.serenity'))) roots.add(envRoot)
+  // 递归扫描 /home/yh 两层（覆盖 /home/yh/home/*、/home/yh/our-home/* 及任意实验 CCC 位置）
+  for (const base of ['/home/yh']) {
+    collectCccs(base, 0, roots, 2)
+  }
+  const list = [...roots]
+  if (list.length === 0) return '[autotrajectory-exp diag] 未发现 CCC（用 --ccc <path> 指定目标）'
+  const ordered = [...list.filter((r) => loadConfig(r)?.enabled), ...list.filter((r) => !loadConfig(r)?.enabled)]
+  return ordered.map(diagCcc).join('\n\n')
+}
+
+/** 递归收集 .serenity 标记目录（跳过隐藏目录；maxDepth 层内） */
+function collectCccs(dir: string, depth: number, out: Set<string>, maxDepth: number): void {
+  if (depth > maxDepth || !existsSync(dir)) return
+  for (const d of readdirSync(dir, { withFileTypes: true })) {
+    if (!d.isDirectory() || d.name.startsWith('.')) continue
+    const r = join(dir, d.name)
+    if (existsSync(join(r, '.serenity'))) out.add(r)
+    collectCccs(r, depth + 1, out, maxDepth)
+  }
+}
+
 function main(): void {
   const cmd = process.argv[2] ?? 'all'
   const root = findRoot()
@@ -360,6 +475,9 @@ function main(): void {
     case 'random':
       console.log(random(root))
       break
+    case 'diag':
+      console.log(diag())
+      break
     case 'doc':
       console.log(doc(root))
       break
@@ -373,7 +491,7 @@ function main(): void {
       console.log(guide())
       break
     default:
-      console.error(`[autotrajectory-exp] 未知子命令: ${cmd}（可用: 无参一站式 / init / random / doc / check / status / guide）`)
+      console.error(`[autotrajectory-exp] 未知子命令: ${cmd}（可用: 无参一站式 / init / random / diag / doc / check / status / guide）`)
       process.exit(2)
   }
 }
