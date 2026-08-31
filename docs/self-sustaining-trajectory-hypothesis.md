@@ -141,9 +141,10 @@
 
 CCC 参与三步（第一步可一键 `init`）：
 
-1. **初始化（一键）**：`acc_msm exec autotrajectory-exp init`——写配置（`autotrajectory: { enabled: true, intervalHours: N, biasProvider: "autotrajectory-bias.ts" }`）+ 生成偏见内容提供者脚本模板（CCC 根）。
-2. **实现偏见内容提供者**：编辑 `autotrajectory-bias.ts`，stdout 输出偏见内容（反事实方向/探索动机——用 CCC 自己的反馈信息来源保证"足够随机"；dsp 只直接运行脚本取 stdout，**不再经 mech-registry 注册 MSM**）；`acc_msm exec autotrajectory-exp random` 验证。
-3. **标记目标会话**：会话目录名加 `--auto` 后缀（`AGENT_SESSIONS/<date>--<desc>--auto/`）——只有带标志的轨迹走自主形态；可选在 SESSION.md 写「下一轮动机」段作自生偏见。
+1. **初始化（一键）**：`acc_msm exec autotrajectory-exp init`——写配置（`autotrajectory: { enabled: true, intervalHours: N, biasProvider: "autotrajectory-bias.ts", topPrompt: "<本轨迹核心焦点>" }`）+ 生成偏见内容提供者脚本模板（CCC 根）。
+2. **定义轨迹焦点（topPrompt，v1.26.17）**：编辑配置中的 `topPrompt`——**CCC 自己填写**本轨迹的核心目标/纪律/质量要求（例如"持续深化某领域认知，产出可重建的结论与决策记录"）。它会在**每次唤起时最先注入**（`[轨迹焦点]` 段，位于身份锚定之前），作为稳定焦点锚定 trajectory——**实验观察：无焦点锚定时，多轮自主唤起中轨迹腐化严重（焦点丢失）**。与偏见内容分工：焦点=稳定锚（每轮不变），偏见=随机探索方向（每轮不同），互补。
+3. **实现偏见内容提供者**：编辑 `autotrajectory-bias.ts`，stdout 输出偏见内容（反事实方向/探索动机——用 CCC 自己的反馈信息来源保证"足够随机"；dsp 只直接运行脚本取 stdout，**不再经 mech-registry 注册 MSM**）；`acc_msm exec autotrajectory-exp random` 验证。
+4. **标记目标会话**：会话目录名加 `--auto` 后缀（`AGENT_SESSIONS/<date>--<desc>--auto/`）——只有带标志的轨迹走自主形态；可选在 SESSION.md 写「下一轮动机」段作自生偏见。
 
 **观察**：无人类活动满 `intervalHours` 且北京时间非高峰（缺省避开 8~18 点）→ 前台会话自动出现 `[自主轨迹唤起]` 消息（用户全程可见、可介入）。产出落 SESSION.md「自主探索日志」+ 预写「下一轮动机」。
 
