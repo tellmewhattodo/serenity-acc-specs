@@ -4,6 +4,7 @@
 >
 > **整理**：2026-08-15，基于 S134 会话跨仓梳理（opencode-serenity-plugin / dsh-serenity-plugin / pi-serenity-plugin / 历史 SESSION / CHANGELOG）。
 > **增补**：2026-08-27，v1.3.0 理论根基章节（第 10 节）。
+> **增补**：2026-09-06，v1.4.0 工具面重构 + 后续演进（第 11 节：v1.19.5→v1.30.1 功能演进与标准化）。
 
 ---
 
@@ -122,16 +123,16 @@ S122 进一步把宁静号抽象为**宿主无关的 ACC 标准**：
 
 | 实现 | 宿主 | 当前版本 | 可见性 |
 |------|------|----------|--------|
-| `opencode-serenity-plugin` | OpenCode | v0.8.5 | 公开 npm/GitHub |
-| `dsh-serenity-plugin` | DeepSeek Harness | v1.17.3 | 私有 GitLab + GitHub private 镜像 |
+| `opencode-serenity-plugin` | OpenCode | v0.8.5（待按 specs v1.4 同步） | 公开 npm/GitHub |
+| `dsh-serenity-plugin` | DeepSeek Harness | v1.30.1（领先实现） | 公开 npm `@shgroup/dsh-serenity-hooks` + GitHub 双 remote |
 | `pi-serenity-plugin` | Pi | v0.1.2 | 私有 |
 
 共同点：
 
 - 同一套 CCC 文件格式（`.serenity`、`.opencode/skills/`、`AGENT_SESSIONS/`）；
-- 同一套工具语义；
-- 同一套系统提示词注入文本；
-- 同一套拦截缝（路径守卫、safe-mode、session-keeper、压缩保留）。
+- 同一套工具语义（v1.4 起契约名 = dsp v1.30 体系）；
+- 同一套系统提示词注入文本（9 块）；
+- 同一套拦截缝（路径守卫、safe-mode、trajectory-assistant、压缩保留）。
 
 差异只在宿主平台层：工具注册方式、事件缝、命名风格。
 
@@ -161,6 +162,7 @@ S122 进一步把宁静号抽象为**宿主无关的 ACC 标准**：
 | 2026-08-15 | S136 dsp/osp 工具全面对齐；v1.17.x 发布；本故事记录到 specs |
 | 2026-08-24+ | S142 dsp 长期维护：系统提示词 8 块演进 / first-anchor 零配置 / F1 网关 / F2 session_rebuild（轨迹跟踪器）/ F3 会话命名；specs v1.2 |
 | 2026-08-27 | **理论深化**：作者三个月构建后的反思——trajectory 成为中心概念；认知容器定义正式化（认知发生/存储/再发生 + 认知 Loop + trajectory 主体 + 闭环论证）；specs v1.3 §0 理论根基 |
+| 2026-08-27~09-06 | **dsp v1.23~v1.30.1 连续演进**：提示词全英化 + Trajectory Steward / Session=载体 / handyman / Skiff / ACP / 微信桥 / Autopilot Trajectory 正式化 / 工具面重构 13→10（container 族 + praxis + logbook + dashboard + msm 单入口）/ 星舰 Metaphor / trajectory-assistant 关卡化；specs v1.4（工具契约名 v1.30 体系 + 注入 9 块） |
 
 ---
 
@@ -202,6 +204,47 @@ S122 进一步把宁静号抽象为**宿主无关的 ACC 标准**：
 ### 10.5 成文与分层
 
 这一理解以理论根基形式成文（specs §0），是**所有约束的推导前提**——不改变工程约束，只提供"为什么"；新增不变量 I6（轨迹主体优先），为后续机制演化（如预测反馈循环工程化）提供理论锚点。实现层（dsp/osp/pi）按 §0 理解自身定位，按 §3+ 落地机制。
+
+---
+
+## 11. 工具面重构：从 13 工具到 10 工具（2026-09-06，v1.30.0 + specs v1.4.0）
+
+### 11.1 动机
+
+dsp 在 v1.19.5→v1.29.2 演进中工具数从 8 涨到 13（cc_fs/session/acc_kit/cc_git/acc_msm/eap/neat/cce/handyman/session_rebuild/localstore/skiff_admin/autotrajectory-exp）。用户 2026-09-06 拍板"工具面越小执行越好 + msm 重构直觉入口"——工具面从 13 重组为 **10**。
+
+### 11.2 用户裁决链（R↓）
+
+1. **msm 单入口**：acc_msm → `msm`（name 自由文本默认执行）——"改名 msm 同意"；
+2. **命名继承背景**：cc_xx → container_xx（工具命名继承 ACC/CCC 背景，甚至 metaphor）；
+3. **知识工具合并**：eap/neat/cce → **praxis**（可实践理论注入——从 drawing/blueprint/doctrine/lenses/canon/tenets 中选定）；
+4. **admin 全含**：skiff_admin 及系列 → **container_admin**（机务舱：role + msm 管理 + config + 手册）；
+5. **session → logbook**（The Logbook 隐喻）；
+6. **acc_kit → dashboard**（普适仪表随时看；bridge 否——隐喻冲突）；
+7. **硬切无别名**（选项 A——alias 会使工具面膨胀）；
+8. R2+知识合并一起做。
+
+### 11.3 最终形态（10 工具）
+
+| 新工具 | 旧名 | 覆盖 |
+|--------|------|------|
+| container_fs | cc_fs | 文件系统 15 子命令 |
+| container_git | cc_git | git 操作 |
+| container_admin | skiff_admin + acc_msm 管理面 | role + msm 注册管理 + config + 手册 |
+| msm | acc_msm 执行面 | MSM 单入口执行 + 发现（name/args/inspect/目录） |
+| praxis | eap + neat + cce | 可实践理论注入 |
+| logbook | session + session_rebuild | 会话全周期 + 载体重建 |
+| dashboard | acc_kit | health/time/wait |
+| handyman | handyman | 杂工编排（v1.24 loop 重构） |
+| localstore | localstore | 凭据/配置存储 |
+| autopilot-trajectory | autotrajectory-exp | 自主巡航（正式化） |
+
+**specs v1.4.0**：§4 工具契约名采用 v1.30 新名（用户拍板"specs 跟 dsp 领先实现"）——osp/pi 按此对齐。注入结构同步 8→9 块（Tools 殿后）+ 星舰 Metaphor + trajectory-assistant 关卡化 token + registry 写保护/健康检查。详见 specs README §11 演化 + CHANGELOG。
+
+### 11.4 同源教训（为什么工具名重要）
+
+- v1.30.1 教训：重构改了代码/README/CHANGELOG/维护 skill，却漏了 `src/templates/acc-*` 模板资产——技能目录注入旧描述（用户核查发现后补丁发布）。**改名必须全资产同步**（代码 + 模板 + 文档 + specs + CCC 操作指引）。
+- v1.4.0 specs 修复同理：specs 落后 dsp 11 个小版本 + v1.30 大重构（§4 旧名/§5 8 块/附录 A 停 v1.19.9）——一次对齐 dsp v1.30.1。
 
 ---
 

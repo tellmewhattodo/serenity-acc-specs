@@ -1,35 +1,32 @@
 #!/usr/bin/env bun
 /**
- * autotrajectory-exp.ts — 自主轨迹实验管理 MSM（Mech，纯 TS 零 LLM 决策）——一站式
+ * autopilot-trajectory.ts — 自主轨迹实验管理 MSM（Mech，纯 TS 零 LLM 决策）——一站式
  *
  * 一个 tool 整合实验全部所需：
- *   acc_msm exec autotrajectory-exp            → 一站式全报告（背景 + 就绪 + 状态 + 下一步）
- *   acc_msm exec autotrajectory-exp init       → 初始化实验（写配置 + 生成偏见提供者脚本模板）
- *   acc_msm exec autotrajectory-exp random     → 运行偏见提供者脚本，输出当前偏见内容（验证）
- *   acc_msm exec autotrajectory-exp diag       → 唤起条件链诊断（--ccc <path> 指定；无参递归扫描 /home/yh 两层）
- *   acc_msm exec autotrajectory-exp doc        → 实验定义说明全文（SKILL.md）
- *   acc_msm exec autotrajectory-exp check      → 仅就绪度检查
- *   acc_msm exec autotrajectory-exp status     → 仅当前状态
- *   acc_msm exec autotrajectory-exp guide      → 仅步骤指引
+ *   msm autopilot-trajectory            → 一站式全报告（背景 + 就绪 + 状态 + 下一步）
+ *   msm autopilot-trajectory init       → 初始化实验（写配置 + 生成偏见提供者脚本模板）
+ *   msm autopilot-trajectory random     → 运行偏见提供者脚本，输出当前偏见内容（验证）
+ *   msm autopilot-trajectory diag       → 唤起条件链诊断（--ccc <path> 指定；无参递归扫描 /home/yh 两层）
+ *   msm autopilot-trajectory doc        → 实验定义说明全文（SKILL.md）
+ *   msm autopilot-trajectory check      → 仅就绪度检查
+ *   msm autopilot-trajectory status     → 仅当前状态
+ *   msm autopilot-trajectory guide      → 仅步骤指引
  *
  * 概念（用户拍板命名）：偏见内容提供者（bias provider）——CCC 根目录下一个脚本，
  * stdout 输出本轮唤起要注入的偏见内容（反事实方向/探索动机等）。tool 直接运行它；
  * 脚本缺失 → 报错要求实现（不再经 mech-registry 注册 MSM）。
  *
- * 轨迹焦点（topPrompt，v1.26.17）：CCC 定义 autotrajectory 时自己填写本轨迹核心焦点，
- * 每次唤起最先注入（[轨迹焦点] 段）——稳定锚定防漂移，与偏见内容（每轮随机探索）互补。
+ * 状态查看：WebUI 设置面板「自主轨迹」区块（GET /serenity/autopilot-trajectory）+「立即唤起」按钮
+ * （POST /serenity/autopilot-trajectory {action:'wake'}，调试语义跳过窗口/间隔）——由插件提供，脚本不重复。
  *
- * 状态查看：WebUI 设置面板「自主轨迹」区块（GET /serenity/autotrajectory）+「立即唤起」按钮
- * （POST /serenity/autotrajectory {action:'wake'}，调试语义跳过窗口/间隔）——由插件提供，脚本不重复。
- *
- * 零 DSH 依赖，任何 CCC 可运行。环境：SERENITY_ROOT（acc_msm exec 注入）或 cwd 上溯 .serenity。
+ * 零 DSH 依赖，任何 CCC 可运行。环境：SERENITY_ROOT（msm 注入）或 cwd 上溯 .serenity。
  */
 
 import { existsSync, readFileSync, statSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, resolve, basename, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
-const DEFAULT_BIAS_PROVIDER = 'autotrajectory-bias.ts'
+const DEFAULT_BIAS_PROVIDER = 'autopilot-bias.ts'
 const AUTO_SUFFIX = '--auto'
 const MOTIVATION_MARKER = '下一轮动机'
 const CONFIG_PATHS = ['.opencode/serenity.json', '.dsh/serenity.json']
@@ -37,7 +34,7 @@ const CONFIG_PATHS = ['.opencode/serenity.json', '.dsh/serenity.json']
 /** 偏见内容提供者脚本脚手架模板（init 生成；CCC 按自己的反馈信息来源改写） */
 const BIAS_TEMPLATE = `#!/usr/bin/env bun
 /**
- * autotrajectory-bias.ts — 自主轨迹偏见内容提供者（CCC 实现）
+ * autopilot-bias.ts — 自主轨迹偏见内容提供者（CCC 实现）
  *
  * stdout 输出一行/一段文本 = 本轮唤起注入的偏见内容（反事实问题 / 探索方向 /
  * 任何让轨迹偏离既有路径的输入）。偏见内容归 CCC——用本 CCC 自己的反馈信息来源
@@ -70,7 +67,7 @@ interface AutoConfig {
   enabled?: boolean
   intervalHours?: number
   biasProvider?: string
-  /** 轨迹焦点（topPrompt，v1.26.17）：CCC 定义 autotrajectory 时自己填写——每次唤起最先注入（稳定锚防漂移） */
+  /** 顶层提示词（v1.26.17）：CCC 定义的稳定提示词，每次唤起最先注入（顶层约束/质量要求） */
   topPrompt?: string
   session?: string
   avoidWakeHours?: { start?: number; end?: number }
@@ -99,8 +96,8 @@ function loadConfig(root: string): AutoConfig | null {
     const p = join(root, rel)
     if (!existsSync(p)) continue
     try {
-      const cfg = JSON.parse(readUtf8(p)) as { autotrajectory?: AutoConfig }
-      return cfg.autotrajectory ?? null
+      const cfg = JSON.parse(readUtf8(p)) as { autopilotTrajectory?: AutoConfig }
+      return cfg.autopilotTrajectory ?? null
     } catch {
       return null
     }
@@ -127,7 +124,7 @@ function runBiasProvider(root: string, providerRel: string): { text: string | nu
     return { text: null, error: String((e as Error).message) }
   }
   if (!existsSync(scriptAbs)) {
-    return { text: null, error: `请在 CCC 根目录实现偏见内容提供者脚本: ${providerRel}（acc_msm exec autotrajectory-exp init 可生成模板）` }
+    return { text: null, error: `请在 CCC 根目录实现偏见内容提供者脚本: ${providerRel}（msm autopilot-trajectory init 可生成模板）` }
   }
   for (const cmd of ['bun', process.execPath]) {
     try {
@@ -182,14 +179,14 @@ function doc(root: string): string {
 
 function check(root: string): string {
   const cfg = loadConfig(root)
-  const lines: string[] = [`[autotrajectory-exp] 实验就绪度检查（CCC: ${basename(root)}）`, '']
+  const lines: string[] = [`[autopilot-trajectory] 实验就绪度检查（CCC: ${basename(root)}）`, '']
   const fail: string[] = []
 
   if (!cfg) {
-    lines.push('✗ 未配置 autotrajectory（.opencode/serenity.json 缺段）——acc_msm exec autotrajectory-exp init 一键初始化')
+    lines.push('✗ 未配置 autopilotTrajectory（.opencode/serenity.json 缺段）——msm autopilot-trajectory init 一键初始化')
     fail.push('config')
   } else if (!cfg.enabled) {
-    lines.push('✗ autotrajectory.enabled = false（未开启）')
+    lines.push('✗ autopilotTrajectory.enabled = false（未开启）')
     fail.push('enabled')
   } else {
     lines.push(`✓ enabled = true`)
@@ -198,7 +195,7 @@ function check(root: string): string {
     if (cfg.topPrompt?.trim()) {
       lines.push(`✓ topPrompt（轨迹焦点）已定义: ${cfg.topPrompt.trim().slice(0, 60)}${cfg.topPrompt.trim().length > 60 ? '…' : ''}（每次唤起最先注入，锚定防漂移）`)
     } else {
-      lines.push(`⚠ topPrompt（轨迹焦点）未定义——建议 CCC 定义 autotrajectory 时填写本轨迹核心焦点（实验观察：无焦点锚定，多轮唤起轨迹易漂移腐化）`)
+      lines.push(`⚠ topPrompt（轨迹焦点）未定义——建议 CCC 定义 autopilotTrajectory 时填写本轨迹核心焦点（实验观察：无焦点锚定，多轮唤起轨迹易漂移腐化）`)
     }
     if (cfg.session) lines.push(`  session = ${cfg.session}`)
     const avoid = cfg.avoidWakeHours
@@ -246,9 +243,9 @@ function check(root: string): string {
 function status(root: string): string {
   const cfg = loadConfig(root)
   const now = Date.now()
-  const lines: string[] = [`[autotrajectory-exp] 实验状态（CCC: ${basename(root)}，北京 ${beijingHour(now)} 点）`, '']
+  const lines: string[] = [`[autopilot-trajectory] 实验状态（CCC: ${basename(root)}，北京 ${beijingHour(now)} 点）`, '']
   if (!cfg?.enabled) {
-    lines.push('autotrajectory 未启用（enabled=false 或未配置）——零资源占用')
+    lines.push('autopilotTrajectory 未启用（enabled=false 或未配置）——零资源占用')
     return lines.join('\n')
   }
   lines.push(`配置: intervalHours=${cfg.intervalHours ?? 12} | biasProvider=${cfg.biasProvider?.trim() || DEFAULT_BIAS_PROVIDER}${cfg.session ? ` | session=${cfg.session}` : ''}${cfg.topPrompt?.trim() ? ' | topPrompt ✓' : ''}`)
@@ -270,30 +267,30 @@ function status(root: string): string {
 
 function guide(): string {
   return [
-    '[autotrajectory-exp] 实验步骤指引',
+    '[autopilot-trajectory] 实验步骤指引',
     '',
-    '① 初始化（一键）：acc_msm exec autotrajectory-exp init',
-    '   ——写配置（.opencode/serenity.json autotrajectory 段）+ 生成偏见提供者脚本模板（CCC 根 autotrajectory-bias.ts）',
+    '① 初始化（一键）：msm autopilot-trajectory init',
+    '   ——写配置（.opencode/serenity.json autopilotTrajectory 段）+ 生成偏见提供者脚本模板（CCC 根 autopilot-bias.ts）',
     '② **定义轨迹焦点（topPrompt）**：编辑配置中的 topPrompt——**CCC 自己填写**本轨迹的核心',
     '   目标/纪律/质量要求（示例："持续深化某领域认知，产出可重建的结论与决策记录"）。',
     '   它会在每次唤起时最先注入（[轨迹焦点] 段），作为稳定焦点锚定 trajectory 防漂移——',
     '   **实验观察：无焦点锚定时多轮唤起轨迹腐化严重（焦点丢失）**。勿留空。',
-    '③ 实现偏见内容提供者：编辑 autotrajectory-bias.ts，stdout 输出偏见内容（反事实方向/探索动机，',
-    '   用本 CCC 自己的信息来源保证"足够随机"）；acc_msm exec autotrajectory-exp random 验证',
+    '③ 实现偏见内容提供者：编辑 autopilot-bias.ts，stdout 输出偏见内容（反事实方向/探索动机，',
+    '   用本 CCC 自己的信息来源保证"足够随机"）；msm autopilot-trajectory random 验证',
     '④ 标记目标会话：目录名加 --auto 后缀 AGENT_SESSIONS/<date>--<desc>--auto/',
     '   （可选）该 SESSION.md 写「下一轮动机」段作自生偏见',
-    '⑤ 验证就绪：acc_msm exec autotrajectory-exp（一站式报告应为 ✅；topPrompt 未定义会 ⚠ 提示）',
+    '⑤ 验证就绪：msm autopilot-trajectory（一站式报告应为 ✅；topPrompt 未定义会 ⚠ 提示）',
     '⑥ 观察：无人类活动满 intervalHours 且北京非高峰 → 前台会话自动出现 [自主轨迹唤起]',
     '   产出落 SESSION.md「自主探索日志」+ 预写「下一轮动机」',
     '',
     '分工：焦点（topPrompt）= 稳定锚，每轮不变；偏见（biasProvider）= 随机探索方向，每轮不同——两者都由 CCC 定义。',
-    '完整定义见 SKILL.md（acc_msm exec autotrajectory-exp doc）',
+    '完整定义见 SKILL.md（msm autopilot-trajectory doc）',
   ].join('\n')
 }
 
 /** 初始化：合并写配置（不覆盖其他段）+ 生成偏见提供者脚本模板（已存在则跳过） */
 function init(root: string): string {
-  const out: string[] = ['[autotrajectory-exp] 初始化实验', '']
+  const out: string[] = ['[autopilot-trajectory] 初始化实验', '']
 
   // ① 写配置
   let cfgPath = join(root, CONFIG_PATHS[0]!)
@@ -310,8 +307,8 @@ function init(root: string): string {
       /* 损坏则重建 */
     }
   }
-  const at = (merged.autotrajectory as Record<string, unknown> | undefined) ?? {}
-  merged.autotrajectory = {
+  const at = (merged.autopilotTrajectory as Record<string, unknown> | undefined) ?? {}
+  merged.autopilotTrajectory = {
     enabled: true,
     intervalHours: 12,
     biasProvider: DEFAULT_BIAS_PROVIDER,
@@ -323,7 +320,7 @@ function init(root: string): string {
   }
   writeFileSync(cfgPath, `${JSON.stringify(merged, null, 2)}\n`)
   out.push(`✓ 配置写入: ${cfgPath}`)
-  out.push(`  autotrajectory = ${JSON.stringify(merged.autotrajectory)}`)
+  out.push(`  autopilotTrajectory = ${JSON.stringify(merged.autopilotTrajectory)}`)
   out.push(`  ⚠ 请编辑 topPrompt 为**本 CCC 的轨迹焦点**（现为占位——每次唤起最先注入，防轨迹漂移，勿留空）`)
 
   // ② 生成偏见提供者脚本模板
@@ -335,7 +332,7 @@ function init(root: string): string {
     out.push(`✓ 已生成偏见提供者脚本模板: ${DEFAULT_BIAS_PROVIDER}（编辑它，stdout 输出偏见内容）`)
   }
 
-  out.push('', '下一步：② 编辑配置 topPrompt（轨迹焦点——CCC 自己填写本轨迹核心目标，勿留空）→ ③ 标记目标会话 --auto 后缀 → ⑤ acc_msm exec autotrajectory-exp 验证就绪')
+  out.push('', '下一步：② 编辑配置 topPrompt（轨迹焦点——CCC 自己填写本轨迹核心目标，勿留空）→ ③ 标记目标会话 --auto 后缀 → ⑤ msm autopilot-trajectory 验证就绪')
   return out.join('\n')
 }
 
@@ -344,8 +341,8 @@ function random(root: string): string {
   const cfg = loadConfig(root)
   const provider = cfg?.biasProvider?.trim() || DEFAULT_BIAS_PROVIDER
   const bias = runBiasProvider(root, provider)
-  if (bias.error) return `[autotrajectory-exp] ✗ ${bias.error}`
-  return `[autotrajectory-exp] 当前偏见内容（${provider}）:\n${bias.text ?? '（空输出）'}`
+  if (bias.error) return `[autopilot-trajectory] ✗ ${bias.error}`
+  return `[autopilot-trajectory] 当前偏见内容（${provider}）:\n${bias.text ?? '（空输出）'}`
 }
 
 /** 一站式全报告：背景 + 就绪检查 + 状态 + 下一步 + 指引（CCC agent 看一次即懂并知道下一步） */
@@ -355,14 +352,14 @@ function all(root: string): string {
   const stat = status(root)
   const next: string[] = ['═══ 下一步 ═══']
   if (!cfg) {
-    next.push('→ 本 CCC 尚未配置 autotrajectory。开始实验：acc_msm exec autotrajectory-exp init 一键初始化。')
+    next.push('→ 本 CCC 尚未配置 autopilotTrajectory。开始实验：msm autopilot-trajectory init 一键初始化。')
   } else if (!cfg.enabled) {
-    next.push('→ autotrajectory.enabled 为 false——置 true 开启实验（或 init 重新初始化）。')
+    next.push('→ autopilotTrajectory.enabled 为 false——置 true 开启实验（或 init 重新初始化）。')
   } else if (ready.includes('✗')) {
     next.push('→ 存在未就绪项（见上）。补齐后重跑本命令确认 ✅。')
   } else {
     next.push('→ 已就绪 ✅。保持会话空闲满 intervalHours 且北京非高峰 → 自动唤起（前台可见）。')
-    next.push('→ 之后可随时 acc_msm exec autotrajectory-exp status 查看距下次唤起的进度。')
+    next.push('→ 之后可随时 msm autopilot-trajectory status 查看距下次唤起的进度。')
   }
   return [BACKGROUND, ready, '', stat, '', next.join('\n'), '', guide()].join('\n')
 }
@@ -377,8 +374,8 @@ function diagCcc(root: string): string {
 
   // ① enabled（定时器是否启动）
   if (!cfg) {
-    blocks.push('✗ autotrajectory 未配置（定时器不启动）')
-    suggest.push('配置：.opencode/serenity.json 加 autotrajectory 段（autotrajectory-exp init 可生成）')
+    blocks.push('✗ autopilotTrajectory 未配置（定时器不启动）')
+    suggest.push('配置：.opencode/serenity.json 加 autopilotTrajectory 段（autopilot-trajectory init 可生成）')
   } else if (!cfg.enabled) {
     blocks.push('✗ enabled = false（定时器不启动）')
     suggest.push('置 enabled: true')
@@ -434,7 +431,7 @@ function diagCcc(root: string): string {
     const bias = runBiasProvider(root, provider)
     if (bias.error) {
       blocks.push(`✗ 偏见脚本: ${bias.error}`)
-      suggest.push('实现偏见脚本（autotrajectory-exp init 生成模板后编辑）')
+      suggest.push('实现偏见脚本（autopilot-trajectory init 生成模板后编辑）')
     } else {
       blocks.push(`✓ 偏见脚本可运行（输出: ${bias.text ?? '（空）'}）`)
     }
@@ -452,7 +449,7 @@ function diagCcc(root: string): string {
   return lines.join('\n')
 }
 
-/** diag：--ccc <path> 指定目标 CCC；无参扫描常见 CCC 根（配置了 autotrajectory 的优先） */
+/** diag：--ccc <path> 指定目标 CCC；无参扫描常见 CCC 根（配置了 autopilotTrajectory 的优先） */
 function diag(): string {
   const argIdx = process.argv.indexOf('--ccc')
   if (argIdx >= 0 && process.argv[argIdx + 1]) {
@@ -466,7 +463,7 @@ function diag(): string {
     collectCccs(base, 0, roots, 2)
   }
   const list = [...roots]
-  if (list.length === 0) return '[autotrajectory-exp diag] 未发现 CCC（用 --ccc <path> 指定目标）'
+  if (list.length === 0) return '[autopilot-trajectory diag] 未发现 CCC（用 --ccc <path> 指定目标）'
   const ordered = [...list.filter((r) => loadConfig(r)?.enabled), ...list.filter((r) => !loadConfig(r)?.enabled)]
   return ordered.map(diagCcc).join('\n\n')
 }
@@ -486,7 +483,7 @@ function main(): void {
   const cmd = process.argv[2] ?? 'all'
   const root = findRoot()
   if (!root) {
-    console.error('[autotrajectory-exp] ✗ 未找到 CCC 根（无 .serenity；acc_msm exec 会自动注入 SERENITY_ROOT）')
+    console.error('[autopilot-trajectory] ✗ 未找到 CCC 根（无 .serenity；msm 会自动注入 SERENITY_ROOT）')
     process.exit(1)
   }
   switch (cmd) {
@@ -515,7 +512,7 @@ function main(): void {
       console.log(guide())
       break
     default:
-      console.error(`[autotrajectory-exp] 未知子命令: ${cmd}（可用: 无参一站式 / init / random / diag / doc / check / status / guide）`)
+      console.error(`[autopilot-trajectory] 未知子命令: ${cmd}（可用: 无参一站式 / init / random / diag / doc / check / status / guide）`)
       process.exit(2)
   }
 }

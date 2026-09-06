@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.4.0 (2026-09-06)
+
+与 dsp v1.30.1 全面对齐（S142，用户拍板"specs §4 最小公共集改用 dsp v1.30 新名 + A 全量语义同步"——specs 跟随 dsp 领先实现）。v1.3.1（2026-08-27）→ v1.4.0 期间 dsp 演进 v1.20~v1.30 共 11 个小版本 + v1.30 大重构，本次一次对齐：
+
+- **§4 工具契约名 → v1.30 体系**（用户裁决链：msm 单入口 / container 族 / praxis 三合一 / container_admin 机务舱 / logbook / dashboard / 硬切无别名）：container_fs / container_git / container_admin / msm / praxis / logbook / dashboard / handyman / localstore / autopilot-trajectory；改名对照表 §4.4；loop → handyman（v1.24.0 机制语义）；cce 不再是独立工具（praxis section）
+- **§4.3 MSM 注册表单级聚合 + 写保护 + 健康检查**（dsp v1.28.0 ⑤）：注册表单级聚合于 `.opencode/skills/<ccc-name>/references/`；写 deny 读 allow；dashboard health 含 registry 完整性段（坏不抛错 + git 恢复指引）
+- **§5 注入结构 8 → 9 块**（dsp v1.28.0 ③）：Tools 独立块殿后（SKILL 后 Session 前），装配序 ACC→Metaphor→Principles→CCE→EAP→[状态]→SKILL→Tools→Session；Tools 块含 msm 单入口 4 行调用协议
+- **提示词全英化**（dsp v1.23.0）：EAP 块英化 + Principles 新增 session-trajectory 关系段 + ACC 块工具行英化
+- **星舰 Metaphor 全文**（dsp v1.29.0 ①）：one starship one voyage / deep space / Departure Inspection / launching / star charts（海船→星舰意象升级）
+- **trajectory-assistant 关卡化 token 体系**（dsp v1.29.0 ②）：轨迹督促机制 trajectory-steward → trajectory-assistant（并入 assistant 体系）；token 常量（CHECKPOINT / `· LIMIT` + MANDATORY / `· REBUILD` / `· BOUNDARY GUARD` / `[Autopilot Trajectory · 唤起]`）；D8 词法原则（关卡思想限结构，提示词用词禁游戏黑话）
+- **会话命名 summary ≤20 字约定**（dsp v1.28.0 ②）：logbook use/create/rebuild summary 必填 → dsh 会话标题 `S###-YYYY-MM-DD-<概括>`
+- **§2 术语表**：新增 trajectory-assistant 术语；Session 术语补 logbook rebuild 语义
+- **§3 CCC 结构**：注册表位置修正（references/ 聚合档）+ serenity.json 字段（loop → handyman）
+- **§6/§8/§9**：引用同步（9 块 / msm / assistant / registry 保护）
+- **修复章节编号 bug**：原 §5 误标 `## 4.`（v1.2.0 起存在）→ 修正为 §5；子节 5.8-5.11 顺延（Tools 块 + Session + 注入时机 + assistant）
+- **附录 A**：dsp 列 v1.19.9 → **v1.30.1**（全量核对更新）；osp 列标注待同步
+- **docs/acc-story.md**：时间线补 v1.23~v1.30.1 演进；新增第 11 节（工具面重构 13→10 故事）
+- **docs/injection-source-verification.md**：v1.4.0 过时注记 + 9 块源码位置更新
+- **experiments/autotrajectory → autopilot-trajectory**：目录改名 + SKILL.md/脚本同步 dsp 权威版（autopilotTrajectory 配置键 / autopilot-bias.ts / msm 单入口调用法）
+- **docs/self-sustaining-trajectory-hypothesis.md**：§7.1 参与指南同步（autopilot-trajectory + msm 调用法）
+- **package.json**：version 1.0.0 → 1.4.0（同步标准版本——此前停更）
+
 ## v1.3.1 (2026-08-27)
 
 概念定义升级：**Session = Trajectory 的可重建载体**（S142 用户定义——宁静号 session 与 trajectory 同义/承载关系，用于 dsp v1.23.0 提示词全英化 + 维护机制定名 **Trajectory Steward**）：
