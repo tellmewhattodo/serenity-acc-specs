@@ -1,8 +1,8 @@
-# Serenity-ACC 认知容器标准（Specs v1.4.0）
+# Serenity-ACC 认知容器标准（Specs v1.5.0）
 
-> **状态**：v1.4.0（2026-09-06，承接 v1.3.1 + dsp v1.30.1 对齐：**工具契约名 → v1.30 新体系** / 注入结构 8→9 块（toolsBlock 殿后）/ 提示词全英化 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查 / 会话命名 summary 约定 / handyman 机制语义）
+> **状态**：v1.5.0（2026-09-08，提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层）——承接 v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
-> **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 **dsp 领先**（v1.19.9 → v1.30.1），specs 跟随 dsp 领先实现（§4 工具契约名 v1.4.0 起用 dsp v1.30 新名）；**osp/pi 按本 spec 待同步**（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
+> **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 **dsp 领先**（v1.19.9 → v1.30.4），specs 跟随 dsp 领先实现（§4 工具契约名 v1.4.0 起用 dsp v1.30 新名；v1.5.0 提示词机制命名 Induction）；**osp/pi 按本 spec 待同步**（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
 > **仓库**：[github.com/tellmewhattodo/serenity-acc-specs](https://github.com/tellmewhattodo/serenity-acc-specs)（公开标准仓库）
 
@@ -15,7 +15,7 @@
 - §2 术语
 - §3 CCC 结构约定（宿主无关）
 - §4 工具契约（宿主无关）
-- §5 核心 loop 注入规范（9 块，**重点**）
+- §5 Induction（成员装配，8 块五层，**重点**）
 - §6 拦截缝语义
 - §7 激活协议
 - §8 skill 格式兼容基线
@@ -128,7 +128,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 
 本标准定义**宿主无关的 ACC 语义**，使：
 - 同一 CCC 目录可被任何符合本标准的 agent 工具驱动（opencode / DSH / Pi / 未来其他）
-- 工具契约、拦截缝语义、CCC 结构约定、**核心 loop 注入内容**有明确的宿主无关定义
+- 工具契约、拦截缝语义、CCC 结构约定、**Induction 装配内容**有明确的宿主无关定义
 - 新宿主适配 = 按标准实现一次，而非从零发明
 - **opencode skill（SKILL.md + frontmatter + references/ + scripts/）格式是跨宿主兼容的强制基线**
 
@@ -140,7 +140,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | I2 | 无 `.serenity` 零影响 | 非 CCC 目录中，ACC 对宿主原生行为零影响 |
 | I3 | 机械约束优先 | 能由拦截缝机械执行的，不依赖模型自觉 |
 | I4 | skill 格式兼容 | opencode skill 格式（`SKILL.md` + frontmatter）必须可被任意 ACC 实现加载 |
-| I5 | 注入内容一致 | 核心 loop 注入的 9 块内容（§5）必须与标准全文一致（允许动态字段差异：ACC 版本号 / CCC 名 / Root / 工具清单 / 活跃会话） |
+| I5 | Induction 内容一致 | Induction 装配内容（§5 五层骨架 8 块）必须与标准全文一致（允许动态字段差异：ACC 版本号 / CCC 名 / Root / 工具清单 / 活跃会话） |
 | I6 | **轨迹主体优先**（v1.3，v1.3.1 扩展） | 一切机制服务轨迹连续性：Agent/LLM/宿主可替换；**Session（会话）是 Trajectory 的可重建载体——载体可丢弃重建，SESSION.md（轨迹身体）与轨迹身份不可随意销毁**；重建（logbook rebuild）必须保留轨迹身份与锚定（§0.3/§0.3.1/§0.5） |
 
 ---
@@ -149,11 +149,11 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 
 | 术语 | 定义 |
 |------|------|
-| **ACC** | Abstract Cognitive Container。宿主无关的认知容器蓝图：工具契约 + 拦截缝语义 + 激活协议 + 注入内容。本标准的主题。 |
+| **ACC** | Abstract Cognitive Container。宿主无关的认知容器蓝图：工具契约 + 拦截缝语义 + 激活协议 + Induction 装配内容。本标准的主题。 |
 | **CCC** | Concrete Cognitive Container。带 `.serenity` 标记文件的目录，ACC 的运行时实例。共享资产，宿主无关。 |
 | **宿主** | agent loop 运行时（opencode / DSH / Pi / 未来其他）。ACC 通过宿主扩展机制挂载。 |
 | **适配层** | 在特定宿主上实现 ACC 的产物（opencode 的 plugin、DSH 的 native cordis plugin、Pi 的 extension）。 |
-| **入口技能** | CCC 的顶层认知技能（`*-serenity` 命名的 SKILL.md），全文注入系统提示（§5.4）。 |
+| **入口技能** | CCC 的顶层认知技能（`*-serenity` 命名的 SKILL.md），全文注入系统提示（§5.7 SKILL 块）。 |
 | **MSM** | Mech & Semi-Mech。CCC 内注册的可执行单元（确定性操作），经 mech-registry.json 登记。 |
 | **拦截缝** | 宿主提供的可编程拦截点（工具调用前/后、会话生命周期、系统提示组装）。 |
 | **轨迹 / Trajectory**（v1.3，v1.3.1 修订） | 认知过程本身的连续存在——SESSION.md 是它的持久身体，AGENT_SESSIONS/ 是它的库房。**主体**：Agent 可替换、Session（载体）可重建，轨迹连续（§0.3/§0.3.1）。 |
@@ -161,6 +161,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | **认知 Loop**（v1.3） | 认知发生的基本单位。Loop 中的一切外部交互（工具/等待用户/系统事件）都是反馈；动作与反馈同质（§0.2）。 |
 | **认知介质**（v1.3） | LLM / Runtime / Tools。产生下一步认知与行动的介质，可替换，不属于轨迹本体（§0.3）。 |
 | **trajectory-assistant**（v1.4，dsp v1.29 定名） | 过程性动态提示注入机制的统称（Trajectory Steward 计分督促 + 重建提醒 + 输出守卫打回 + Autopilot 唤起）。关卡化设计：token 常量单一真相源 + 风格 facade；**关卡思想限结构与时机，提示词用词禁游戏黑话**（CHECKPOINT/LIMIT 等自然词可）。 |
+| **Induction / 成员装配**（v1.5.0，用户 2026-09-07 拍板命名） | **系统提示注入机制的统称**（原"核心 loop 注入"）：把新实例（新会话 / rebuild 重建 / 新 agent）引入为轨迹成员的装配机制——启动时注入 8 块五层骨架文本（A 主体定义 / B 质量规范 / C 状态调节 / D 工作供给 / E 任务指示，稳定→易变装配序），使新实例获得完整主体认知从而"注册"为轨迹成员（§5）。本质 = 成员资格重建协议的可注入面（CCE R↓ 文本实现：载体可换、注册不变）；Metaphor 为装配于主体定义层的渲染块（世界模型记忆钩，不计入 8 块内容骨架；dsp 实际装配 9 物理块）。 |
 
 ---
 
@@ -285,29 +286,47 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | localstore | localstore | 凭据/配置存储 |
 | autopilot-trajectory | autotrajectory-exp | 自主巡航（实验） |
 
-**硬切无别名**：旧名不再作为工具提供（LLM 每轮看到 system-prompt toolsBlock 对照即学新名）。系统提示词 toolsBlock（§5.8）必须含 msm 单入口调用协议。
+**硬切无别名**：旧名不再作为工具提供（LLM 每轮看到 Induction 的 toolsBlock 对照即学新名）。Induction 的 toolsBlock（§5.8）必须含 msm 单入口调用协议。
 
 ---
 
-## 5. 核心 loop 注入规范（**重点**）
+## 5. Induction：成员装配机制（原「核心 loop 注入规范」，**重点**）
 
+> **机制命名（v1.5.0，用户 2026-09-07 拍板）**：系统提示注入机制统称 **Induction**——**把新实例引入为轨迹成员的装配机制**：任何新实例（新会话 / rebuild 重建 / 新 agent / 新 CCC 会话）在启动时被本节的装配文本"注册"，即获完整主体认知（我在哪、协议版本、质量判据、工作供给、任务指示），从而成为轨迹的合格成员（§0.3 trajectory 主体 / I6）。本质 = **成员资格的重建协议的可注入面**（CCE R↓ 的文本实现）——载体（会话）可换、注册（装配文本）不变。
+>
+> **语言学定位（用户引导，功能语言学三视角）**：语域 Register（为"容器认知工作"语场定制的语言系统）/ 体裁 Genre（固定步骤的"主体启动"文本）/ 言语行为 Speech Acts（身份=宣告、约束=指令、Session=指示语）。
+>
+> **命名裁决链（R↓）**：Register / Discourse Frame（语言学派）→ Charter / Constitution（宪章派）→ Core Loop Injection / Membership Protocol（工程派）→ 重框定为「命名动作非文档」→ **Induction**（把新成员引入其规则与职位的动作；与 bootstrap/seed/context/first-anchor 正交——后者管"何时/如何触发"，Induction 管"装配什么"）/ Standing Orders / Terms / Assembly → **用户拍板 Induction**。
+>
 > 本节的每一块注入内容都是**标准的一部分**——任何符合标准的实现，注入的系统提示文本必须与下述全文一致（仅允许动态字段差异：ACC 版本号 / CCC 名 / Root / 工具清单 / 活跃会话）。
 
-### 5.0 注入总览（9 块，v1.2.0 结构演进 + v1.4 toolsBlock 拆分）
+### 5.0 Induction 骨架：8 块五层（v1.5.0 骨架化；v1.2.0 结构演进 + v1.4 toolsBlock 拆分）
 
-| # | 块 | 标记头 | 内容 | 触发 |
-|---|----|--------|------|------|
-| 1 | ACC 身份 | `=== Serenity ACC ===` | 身份 + CCC 名 + 平台工具说明（v1.19.6 去 Root；v1.28 工具清单移出为独立块） | 会话启动/系统提示组装 |
-| 2 | Metaphor | `=== Serenity Metaphor ===` | 世界模型：三层隐喻域 SHIP/VOYAGE/CREW 10 条（每条 `→ 约束映射` + Verdict 判据；v1.29 星舰意象） | 同上 |
-| 3 | Principles | `=== Serenity Principles ===` | 认知容器本体论 + session-trajectory 关系 + MSM 原则 + Operational boundaries | 同上 |
-| 4 | CCE 约束 | `=== Serenity CCE ===` | CCE 5 行为约束 + H_op 操作熵 | 同上 |
-| 5 | EAP | `=== Serenity EAP ===` | E↑ R↓ S↑ 输出前自检（全英，v1.23） | 同上 |
-| 6 | 状态块（条件） | `=== Serenity Safe Mode ===` / `=== Serenity Localstore ===` | 运行时状态：safe-mode / localstore git 策略 | 按当前状态条件 |
-| 7 | SKILL 全文 | （无标记头） | 该 CCC 顶层入口 skill 全量原文 | 同上 |
-| 8 | Tools | `=== Serenity Tools ===` | 工具清单 + MSM 调用协议（v1.4 独立成块殿后） | 同上 |
-| 9 | Session | `=== Serenity Session ===` | 活跃会话 + todowrite 首位约定 + steward 预声明 | 同上 |
+**骨架 = 8 内容块 × 五层**，按「从稳定到易变、从抽象到具体、从声明到操作」装配（重建视角 R↓：任何新实例读到该文本即重建完整主体认知）：
 
-**装配顺序**：ACC → Metaphor → Principles → CCE → EAP → [状态] → SKILL → **Tools** → Session（身份 → 世界模型 → 信念/边界 → 时间约束 → 质量 → 状态 → 上下文 → 工具参考 → 会话——重建视角 R↓；v1.28.0 ③ 工具清单独立块移末尾：身份先行不被清单干扰、工具参考殿后需要时再看）。
+| 层 | 稳定性 | 内容块（骨架 8 块） | 层职责 |
+|----|--------|--------------------|--------|
+| **A 主体定义层** | 跨会话不变 | ACC 身份（§5.1：我在哪/协议版本）+ Principles（§5.3：本体论 / session-trajectory / MSM 原则 / 边界）+ CCE（§5.4：5 行为约束 + H_op） | 成员资格声明——我是谁、世界如何、边界在哪 |
+| **B 质量规范层** | 跨会话不变 | EAP（§5.5：E↑/R↓/S↑ 输出自检判据） | 输出质量标准 |
+| **C 状态调节层** | 进程内可变（条件注入） | 状态块（§5.6：SafeMode / Localstore） | 当前运行状态调节 |
+| **D 工作供给层** | 较稳定 | SKILL（§5.7：领域知识全文）+ Tools（§5.8：能力索引 + msm 调用协议） | 本 CCC 用什么知识/能力工作 |
+| **E 任务指示层** | 每轮易变 | Session（§5.9：活跃会话 + todo 首位约定 + steward 预声明） | 本轮在哪个轨迹、做什么、记往哪里 |
+
+**物理装配（9 块 = 8 块骨架 + 1 渲染层）**：装配序 ACC → **Metaphor** → Principles → CCE → EAP → [状态] → SKILL → Tools → Session。块序 = 层序 + 渲染层插入：**Metaphor（§5.2，dsp 扩展）是主体定义层的世界模型记忆钩渲染层**——每条隐喻映射一条协议约束（M-1~M-4），把层 A 的声明转译为可记忆意象；不新增内容类型，**不计入 8 块骨架**。装配明细：
+
+| # | 层 | 块 | 标记头 | 触发 |
+|---|----|----|--------|------|
+| 1 | A | ACC 身份 | `=== Serenity ACC ===` | 会话启动/系统提示组装 |
+| 2 | A·渲染 | Metaphor | `=== Serenity Metaphor ===` | 同上（dsp 扩展） |
+| 3 | A | Principles | `=== Serenity Principles ===` | 同上 |
+| 4 | A | CCE 约束 | `=== Serenity CCE ===` | 同上 |
+| 5 | B | EAP | `=== Serenity EAP ===` | 同上 |
+| 6 | C | 状态块（条件） | `=== Serenity Safe Mode ===` / `=== Serenity Localstore ===` | 按当前状态条件 |
+| 7 | D | SKILL 全文 | （无标记头） | 同上 |
+| 8 | D | Tools | `=== Serenity Tools ===` | 同上 |
+| 9 | E | Session | `=== Serenity Session ===` | 同上 |
+
+**装配序深层逻辑**：A→B 声明跨会话不变的成员资格（身份先行——v1.28.0 ③ 工具清单独立块移末尾，身份不被清单干扰）；C 按进程内状态条件调节（无对应状态整块省略）；D→E 供给本 CCC 的知识/能力并指示本轮任务（工具参考殿后、需要时再看，最具体的操作指示最后出现）。从稳定到易变 = 从成员身份到本轮任务：越早读到越通用的成员声明，越晚读到越具体的工作供给。
 
 **幂等规则**：通过标记头检测（`output.system.some(s => s.includes(marker))`），同一会话不重复注入。压缩（compact）后必须重注入（保留 ACC 身份，模型不丢失 CCC 约束）。
 
@@ -337,7 +356,7 @@ Additional MSMs registered by this CCC are available — call msm("<name>") to e
 - **Root 不在此块**（v1.19.6 去重）——边界语义归 §5.3 Principles 块
 - 平台工具行按宿主真实平台调整（"The DSH platform tools" → 宿主名）；本块末尾须指 Tools 块与 msm 单入口
 
-### 5.2 块 2：Metaphor（v1.19.7 三层结构化 / v1.19.9 十条 / v1.29 星舰意象升级，dsp 扩展）
+### 5.2 块 2：Metaphor（渲染层——不计入 8 块骨架；v1.19.7 三层结构化 / v1.19.9 十条 / v1.29 星舰意象升级，dsp 扩展）
 
 ```
 === Serenity Metaphor ===
@@ -606,16 +625,18 @@ Do NOT remove or reorder this item — keep it at position 0.
 - **预声明必附**（v1.3.1 steward / v1.4 assistant）：Session 块必须附 §5.11 的 TRAJECTORY-ASSISTANT 预声明——机制先于提醒（模型预先知道被督促、如何 ACK）
 - **todowrite 首项无 priority**（v1.4 注记：DSH 平台 todowrite schema 无 priority 字段——OSP 版如支持可保留，宿主按自身 schema 调整）
 
-### 5.10 注入时机
+### 5.10 Induction 注入时机（装配时机）
 
 | 时机 | 语义 | osp 实现 | dsp 实现 |
 |------|------|---------|---------|
 | 会话启动播种 | 新会话一次性注入 ACC 身份 | `system.transform` | `agent/session-start`（emit）+ `agent.inject` |
-| 系统提示组装 | 每轮装配时注入 9 块 | `system.transform` | `ctx.systemPrompt.section`（order -50，全局 + scoped 抗 shadow） |
+| 系统提示组装 | 每轮装配时注入 Induction（五层骨架全文） | `system.transform` | `ctx.systemPrompt.section`（order -50，全局 + scoped 抗 shadow） |
 | 首次进入 CCC | 附加紧凑身份提示（只注入一次） | `messages.transform` | `agent/prompt-submit`（waterfall，Set 跟踪） |
 | 压缩后保留 | compact 成功 → 重注入 ACC 身份 | `experimental.session.compacting` | `session/event`(compact/end) → 重注入 |
 
 ### 5.11 轨迹督促机制（trajectory-assistant，关卡化注入统称；v1.3.1 steward 定名 → v1.4 并入 assistant 体系）
+
+> **与 Induction 的关系（v1.5.0 边界澄清）**：trajectory-assistant 是**过程性动态注入**（会话运行中按时机/阈值提醒），Induction 是**装配性静态注入**（启动时一次注册成员资格）——二者互补不互含；预声明段属 Induction 的 Session 块（§5.9），提醒机制本体属本机制。
 
 **目的（机制语义）**：督促 LLM 记录 SESSION.md——session 是 trajectory 的可重建载体（§0.3.1），载体可丢但轨迹身体不可断更；assistant 以积分制机械追踪"是否持续把进度写回 SESSION.md"，达阈值即提醒（observe-and-enrich 不 veto）。
 
@@ -649,7 +670,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 | # | 缝语义 | 要求 | osp（opencode） | dsp（DSH） | pi（Pi，按 deepdive） |
 |---|--------|------|-----------------|-----------|----------------------|
 | S1 | **pre-tool gate**：工具执行前 allow/deny/ask | 路径逃逸 deny、黑名单 deny、safe-mode deny | `tool.execute.before` 返回 abort | `tools/pre-execute` + `ctx.tools.guard` | `tool_execution_start` block/mutate + `tool_call` transform + 同名覆盖内置工具 |
-| S2 | **系统提示注入**（§5 全部 9 块） | 会话启动注入（CCC 名/root/版本/纪律/入口 skill 全文） | `system.transform` | `agent/session-start` + `systemPrompt.section` | `session_start` + `before_agent_start` + registerTool promptSnippet |
+| S2 | **Induction（成员装配）**（§5 全部内容） | 会话启动注入（CCC 名/root/版本/纪律/入口 skill 全文） | `system.transform` | `agent/session-start` + `systemPrompt.section` | `session_start` + `before_agent_start` + registerTool promptSnippet |
 | S3 | **生命周期钩子**：会话启动/压缩/结束 | compact 后保留 ACC 身份 | `session.compacting` | `session/event`(compact/end) → 重注入 | `before_compact`/`compact` + `session_shutdown` |
 | S4 | **会话追踪**：DCP 提醒 | §5.11 积分制 | `tool.execute.before/after` + messages.transform | `tools/post-execute` observe-and-enrich | `tool_execution_end`/`tool_result` mutate + `sendMessage` |
 | S5 | **回合落盘**：活动会话心跳 | turn 结束机械落盘进度 | 无（靠 keeper） | `agent/turn-stopping` | `turn_end` block/mutate |
@@ -661,7 +682,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 | 缝 | 决策 | 值 |
 |----|------|-----|
 | pre-tool gate | allow / deny / ask | deny 跳过执行；ask 走审批 |
-| 系统提示注入 | 追加内容 | 幂等（标记头检测） |
+| Induction（成员装配） | 追加内容 | 幂等（标记头检测） |
 | 压缩保留 | 重注入 | 仅 compact 成功时 |
 | 会话追踪 | 提醒注入 | observe-and-enrich（不 veto） |
 
@@ -701,7 +722,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 要成为"符合 Serenity-ACC 标准的 agent 工具"，适配层必须：
 
 - [ ] 提供 §4 全部最小公共集工具（v1.30 命名/子命令/语义一致）
-- [ ] 实现 §5 核心 loop 注入（9 块内容与标准一致，仅动态字段差异）
+- [ ] 实现 §5 Induction（成员装配，8 块五层内容与标准一致，仅动态字段差异）
 - [ ] 实现 §5.11 trajectory-assistant 提醒（计分/阈值/预声明/ACK 协议 + token 体系）
 - [ ] 实现 §6 拦截缝语义（至少 S1/S2/S3/S4/S6；S5/S7 可平台超集）
 - [ ] 遵守 §3 CCC 结构约定（不发明新目录/新配置格式；注册表单级聚合 + 写保护）
@@ -735,20 +756,21 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ## 11. 标准演化
 
-- **版本**：v1.4.0（2026-09-06，承接 v1.3.1 + dsp v1.30.1 对齐——工具契约名 v1.30 体系 + 注入结构 9 块 + 星舰 Metaphor + assistant 关卡化 + registry 保护/健康检查）
+- **版本**：v1.5.0（2026-09-08，承接 v1.4.0——提示词机制命名 **Induction** + §5 骨架化 8 块五层）
+- **v1.5.0 新增/确认（S142，用户拍板命名：提示词机制名 = Induction）**：**系统提示注入机制统称 Induction（成员装配）**——把新实例（新会话 / rebuild 重建 / 新 agent）引入为轨迹成员的装配机制；§5 重构为 **Induction 骨架**（8 块五层：A 主体定义层（ACC/Principles/CCE）/ B 质量规范层（EAP）/ C 状态调节层（状态）/ D 工作供给层（SKILL/Tools）/ E 任务指示层（Session），稳定→易变装配序 + rationale）；Metaphor 定位澄清为**渲染层**（不计入 8 块骨架）；术语表新增 Induction；I5 措辞更新（注入内容一致 → Induction 内容一致）
 - **v1.4.0 新增/确认（S142，用户拍板"specs §4 最小公共集改用 dsp v1.30 新名 + A 全量语义同步"）**：**§4 工具契约名 v1.30 体系**（container_fs/container_git/logbook/msm/container_admin/dashboard/praxis/handyman/localstore/autopilot-trajectory——用户裁决链 ①~⑩ 硬切无别名；改名对照表 §4.4）；**§4.3 registry 单级聚合 + 写保护 + dashboard health registry 完整性段**（dsp v1.28.0 ⑤）；**§5 注入结构 8→9 块**（Tools 独立殿后，dsp v1.28.0 ③）+ **全英化**（EAP/Principles/session-trajectory 关系，dsp v1.23.0）+ **星舰 Metaphor 全文**（dsp v1.29.0 ①）+ **trajectory-assistant token 体系**（CHECKPOINT/LIMIT/REBUILD/BOUNDARY GUARD，dsp v1.29.0 ②）；会话命名 summary ≤20 字约定（§5.9 Session 块 + logbook 语义）；handyman 替代 loop（§4.1）；修复章节编号 bug（原 §5 误标 `## 4.`）
 - **v1.3.1 新增/确认（S142 用户定义升级）**：**Session = Trajectory 的可重建载体**——§0.3.1 新增（同义视角 + 载体视角）；§2 术语表新增 Session 术语、修订 Trajectory；§0.1 定义微调（发生发生在载体中；再发生时载体与推动者均可换）；I6 扩展（载体可丢弃重建，轨迹身体与身份不可销毁）；§5.2 Metaphor 第 7 条修订（The Logbook → 载体关系显式化：sessions are rebuildable carriers / Discard the carrier, keep the logbook）；§5.10 会话追踪提醒改名 **trajectory-steward**（用户定名：trajectory 维护机制 + 机制预声明要求 + 提醒文本统一 + 改名兼容说明）；§5.8 Session 块附 steward 预声明（注：编号为 v1.3.1 当时 8 块结构；v1.4.0 起 Session=§5.9 / steward 机制=§5.11）
 - **v1.3 新增/确认（S142 理论根基）**：§0 理论根基（认知容器定义：trajectory 主体 + 认知 Loop + 闭环论证）+ I6 轨迹主体不变量 + 术语表（轨迹/认知 Loop/认知介质）+ 章节重编号 + CHANGELOG + story 第 10 节
 - **v1.2 新增/确认（S142 系统提示词结构演进，dsp v1.19.9 验证满意后正式化）**：注入结构 5 块 → 8 块（ACC/Metaphor/Principles/CCE/EAP/状态/SKILL/Session）；Metaphor 块三层隐喻域 10 条（M-1~M-4，见 docs/metaphor-domain.md）；Principles 合并原 Constraints（认知容器本体论 + MSM 原则 + 操作边界）；CCE 删 CCE AND EAP 段；ACC 去 Root；safe-mode 语义→机制→约束；first-anchor 零配置化（bootstrap 配置段移除）；dsp 领先，osp 待同步（见附录 A ⚠️ 行）
 - **v1.1 新增/确认**：localstore 存储规范、loop guide 使用指引、EAP 块、运行时状态动态块（safe-mode / localstore git 策略）、跨平台路径守卫、`quotepath`、SESSION 内存化与恢复语义、dsp/osp 工具行为全面对齐（见 CHANGELOG）
-- **变更流程**：任何语义变更需三实现（osp/dsp/pi）对齐后更新；注入内容全文变更需显式记录版本
+- **变更流程**：任何语义变更需三实现（osp/dsp/pi）对齐后更新；Induction 装配内容全文变更需显式记录版本
 - **实现对照**：见附录 A 一致性核对矩阵
 
 ---
 
 ## 附录 A：与 osp/dsp 实现的一致性核对矩阵
 
-| 标准条款 | osp（opencode-serenity-plugin v0.8.5，**待按 v1.4 spec 同步**） | dsp（dsh-serenity-hooks v1.30.1，**领先实现**） | 核对 |
+| 标准条款 | osp（opencode-serenity-plugin v0.8.5，**待按 v1.4/v1.5 spec 同步**） | dsp（dsh-serenity-hooks v1.30.4，**领先实现**；specs 对齐基线 v1.30.1） | 核对 |
 |---------|--------------------------------------------------------------|----------------------------------------------|------|
 | §3 CCC 结构 | .serenity/AGENT_SESSIONS/docs/.opencode/skills/mech-registry.json | 同 + .dsh/ 并存；mech-registry 单级聚合于 `.opencode/skills/<ccc-name>/references/` | ⚠️ osp 待同步（注册表位置） |
 | §3.1 配置 | `.opencode/serenity.json`（handyman/sessionKeeper/safeMode） | `.dsh/serenity.json` 回退 `.opencode/serenity.json`（v1.19.5 起无 bootstrap 段——first-anchor 零配置） | ✅ |
@@ -771,7 +793,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 | §8 skill 格式 | 原生（.opencode/skills） | opencode-skills provider（rank 250）+ acc-* 模板分发 | ✅（dsp 兼容层） |
 | §10 错误类 | 13 类 | 13 类（同） | ✅ |
 
-**核对结论（v1.4.0）**：**dsp 是领先实现**——已实现 v1.4 标准全量（工具面 v1.30 体系 10 工具 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant token / registry 保护与健康检查）并发布 v1.30.1（62 files / 895 tests 全绿实证）；specs 自 v1.2 起跟随 dsp 领先实现。**osp 侧待按本 spec 同步**（§3 registry 位置 / §4 工具改名 / §5.1/5.2/5.3/5.4/5.6/5.8/5.11——见 S142 待办 #6 + §8 用户拍板）；**pi-serenity-plugin 按本标准（v1.4.0 命名）实现即可三端对齐**。v1.3.0 新增 §0 理论根基；v1.3.1 Session=载体定义升级；v1.4.0 工具契约名 v1.30 体系 + 注入 9 块。
+**核对结论（v1.5.0）**：**dsp 是领先实现**——其实际装配文本即 Induction 骨架的实证来源（10 工具 v1.30 体系 / 五层装配含 Metaphor 渲染层 / trajectory-assistant token / registry 保护与健康检查），发布 v1.30.1（62 files / 895 tests 全绿实证；后续 v1.30.2~4 为守卫修复与 skiff 绑定等 CCC 扩展）；specs 自 v1.2 起跟随 dsp 领先实现。**osp 侧待按本 spec 同步**（§3 registry 位置 / §4 工具改名 / §5.1/5.2/5.3/5.4/5.6/5.8/5.11——见 S142 待办 #6 + §8 用户拍板）；**pi-serenity-plugin 按本标准（v1.5.0 命名）实现即可三端对齐**。v1.3.0 新增 §0 理论根基；v1.3.1 Session=载体定义升级；v1.4.0 工具契约名 v1.30 体系 + 注入 9 块；v1.5.0 提示词机制命名 Induction（§5 骨架化——语义文本与 v1.4.0 相同，仅命名与结构叙述更新；dsp/osp 实现侧术语对齐（system-prompt.ts 注释/维护 skill 逐步改用 Induction 提法）为后续项）。
 
 ---
 

@@ -5,6 +5,7 @@
 > **整理**：2026-08-15，基于 S134 会话跨仓梳理（opencode-serenity-plugin / dsh-serenity-plugin / pi-serenity-plugin / 历史 SESSION / CHANGELOG）。
 > **增补**：2026-08-27，v1.3.0 理论根基章节（第 10 节）。
 > **增补**：2026-09-06，v1.4.0 工具面重构 + 后续演进（第 11 节：v1.19.5→v1.30.1 功能演进与标准化）。
+> **增补**：2026-09-08，v1.5.0 提示词机制命名（第 12 节：Induction——成员装配机制；用户 2026-09-07 拍板）。
 
 ---
 
@@ -123,15 +124,15 @@ S122 进一步把宁静号抽象为**宿主无关的 ACC 标准**：
 
 | 实现 | 宿主 | 当前版本 | 可见性 |
 |------|------|----------|--------|
-| `opencode-serenity-plugin` | OpenCode | v0.8.5（待按 specs v1.4 同步） | 公开 npm/GitHub |
-| `dsh-serenity-plugin` | DeepSeek Harness | v1.30.1（领先实现） | 公开 npm `@shgroup/dsh-serenity-hooks` + GitHub 双 remote |
+| `opencode-serenity-plugin` | OpenCode | v0.8.5（待按 specs v1.4/v1.5 同步） | 公开 npm/GitHub |
+| `dsh-serenity-plugin` | DeepSeek Harness | v1.30.4（领先实现；specs 对齐基线 v1.30.1） | 公开 npm `@shgroup/dsh-serenity-hooks` + GitHub 双 remote |
 | `pi-serenity-plugin` | Pi | v0.1.2 | 私有 |
 
 共同点：
 
 - 同一套 CCC 文件格式（`.serenity`、`.opencode/skills/`、`AGENT_SESSIONS/`）；
 - 同一套工具语义（v1.4 起契约名 = dsp v1.30 体系）；
-- 同一套系统提示词注入文本（9 块）；
+- 同一套 Induction 装配文本（8 块五层骨架，v1.5.0 命名）；
 - 同一套拦截缝（路径守卫、safe-mode、trajectory-assistant、压缩保留）。
 
 差异只在宿主平台层：工具注册方式、事件缝、命名风格。
@@ -163,6 +164,8 @@ S122 进一步把宁静号抽象为**宿主无关的 ACC 标准**：
 | 2026-08-24+ | S142 dsp 长期维护：系统提示词 8 块演进 / first-anchor 零配置 / F1 网关 / F2 session_rebuild（轨迹跟踪器）/ F3 会话命名；specs v1.2 |
 | 2026-08-27 | **理论深化**：作者三个月构建后的反思——trajectory 成为中心概念；认知容器定义正式化（认知发生/存储/再发生 + 认知 Loop + trajectory 主体 + 闭环论证）；specs v1.3 §0 理论根基 |
 | 2026-08-27~09-06 | **dsp v1.23~v1.30.1 连续演进**：提示词全英化 + Trajectory Steward / Session=载体 / handyman / Skiff / ACP / 微信桥 / Autopilot Trajectory 正式化 / 工具面重构 13→10（container 族 + praxis + logbook + dashboard + msm 单入口）/ 星舰 Metaphor / trajectory-assistant 关卡化；specs v1.4（工具契约名 v1.30 体系 + 注入 9 块） |
+| 2026-09-07 | **提示词机制命名 Induction（用户拍板）**：去掉 metaphor 后 8 块五层骨架实证（A 主体定义/B 质量规范/C 状态调节/D 工作供给/E 任务指示，稳定→易变装配序）；功能语言学三视角定位（Register/Genre/言语行为） |
+| 2026-09-08 | specs v1.5.0 落地：§5 重构为 Induction 骨架 + 术语表 + I5 + acc-story 第 12 节 |
 
 ---
 
@@ -239,12 +242,54 @@ dsp 在 v1.19.5→v1.29.2 演进中工具数从 8 涨到 13（cc_fs/session/acc_
 | localstore | localstore | 凭据/配置存储 |
 | autopilot-trajectory | autotrajectory-exp | 自主巡航（正式化） |
 
-**specs v1.4.0**：§4 工具契约名采用 v1.30 新名（用户拍板"specs 跟 dsp 领先实现"）——osp/pi 按此对齐。注入结构同步 8→9 块（Tools 殿后）+ 星舰 Metaphor + trajectory-assistant 关卡化 token + registry 写保护/健康检查。详见 specs README §11 演化 + CHANGELOG。
+**specs v1.4.0**：§4 工具契约名采用 v1.30 新名（用户拍板"specs 跟 dsp 领先实现"）——osp/pi 按此对齐。注入结构同步 8→9 块（Tools 殿后）+ 星舰 Metaphor + trajectory-assistant 关卡化 token + registry 写保护/健康检查。**specs v1.5.0**：机制命名 Induction（第 12 节详述）。详见 specs README §11 演化 + CHANGELOG。
 
 ### 11.4 同源教训（为什么工具名重要）
 
 - v1.30.1 教训：重构改了代码/README/CHANGELOG/维护 skill，却漏了 `src/templates/acc-*` 模板资产——技能目录注入旧描述（用户核查发现后补丁发布）。**改名必须全资产同步**（代码 + 模板 + 文档 + specs + CCC 操作指引）。
 - v1.4.0 specs 修复同理：specs 落后 dsp 11 个小版本 + v1.30 大重构（§4 旧名/§5 8 块/附录 A 停 v1.19.9）——一次对齐 dsp v1.30.1。
+
+---
+
+## 12. Induction：提示词机制的命名（用户拍板 2026-09-07，v1.5.0 落地 2026-09-08）
+
+### 12.1 用户的问题
+
+工具面重构（第 11 节）落定后，用户把目光转向提示词本身："去掉 metaphor 后的整个提示词体系叫什么（机制名）、骨架结构是什么——回到语言学，更工程化地认识整个体系"。此前的称呼——"系统提示词 / 注入 / 核心 loop 注入"——是**实现性描述**（怎么做的），不是**机制名**（是什么、为什么存在）。
+
+### 12.2 骨架实证：8 块五层
+
+对 dsp `serenitySystemPrompt` 实际装配序的实证：ACC → Metaphor → Principles → CCE → EAP → [状态] → SKILL → Tools → Session（9 块）。去掉 Metaphor（渲染层）后剩 **8 块五层骨架**：
+
+| 层 | 稳定性 | 块 |
+|----|--------|-----|
+| **A 主体定义层** | 跨会话不变 | ACC 身份（我在哪/协议版本）+ Principles（本体论/session-trajectory/MSM 原则/边界）+ CCE（5 行为约束 + H_op） |
+| **B 质量规范层** | 跨会话不变 | EAP（E↑/R↓/S↑ 自检判据） |
+| **C 状态调节层** | 进程内可变 | SafeMode / Localstore（条件注入） |
+| **D 工作供给层** | 较稳定 | SKILL（领域知识）+ Tools（能力索引） |
+| **E 任务指示层** | 每轮易变 | Session（活跃会话/todo/steward 协议） |
+
+**装配序深层逻辑**：从稳定到易变、从抽象到具体、从声明到操作——任何新实例（新会话 / rebuild 重建 / 新 agent）被这份文本"注册"即获完整主体认知。这正是成员资格重建协议的可注入面（CCE R↓ 的文本实现）：载体（会话）可换、注册（装配文本）不变。
+
+### 12.3 语言学定位（用户引导）
+
+功能语言学三视角理解这个文本系统：
+
+- **语域 Register**：为"容器认知工作"这一语场定制的语言系统（专业化的陈述/指令/判据词汇）；
+- **体裁 Genre**：固定步骤的"主体启动"文本（身份 → 约束 → 质量的稳定序列）；
+- **言语行为 Speech Acts**：身份=宣告、约束=指令、Session=指示语（指向当下轨迹语境的词）。
+
+### 12.4 命名裁决链（R↓）
+
+候选历经三个方向：**语言学派**（Register / Discourse Frame）→ **宪章派**（Charter / Constitution）→ **工程派**（Core Loop Injection / Membership Protocol）。用户重框定："机制名都不太好，中文难听用英语答"——把问题从"文档叫什么"改为**"动作叫什么"**（命名动作非文档）：把新成员引入其规则与职位的动作 = **Induction**。候选对照：Induction（引入成员至其规则与职位；与 bootstrap/seed/context/first-anchor 正交）/ Standing Orders（跨人员更替持续有效的指令）/ Terms / Assembly。**用户拍板 Induction**："的确合适，更新 specs，后面我们做调整都会基于 Induction 骨架了"。
+
+### 12.5 标准影响（specs v1.5.0）
+
+- §5 由「核心 loop 注入规范」重构为 **Induction：成员装配机制**（命名 + 8 块五层骨架 + 装配序 rationale）；
+- §2 术语表新增 **Induction / 成员装配**；
+- I5 措辞更新（注入内容一致 → Induction 内容一致）；
+- Metaphor 定位澄清：主体定义层的**渲染块**（世界模型记忆钩，dsp 扩展），不计入 8 块内容骨架；
+- 后续 dsp/osp 实现侧术语对齐（system-prompt.ts 注释 / 维护 skill 逐步改用 Induction 提法）为渐进项——用户明示后续所有提示词调整基于 Induction 骨架。
 
 ---
 
