@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.2 (2026-09-09)
+
+与 dsp v1.31.1 对齐（S142，用户两条需求——轨迹身体只增不减的治理 + rebuild 交接）：
+
+- **§5.11 新增 token `· LOGBOOK COMPACTION`**（SESSION.md 体积超限重写提醒）：活跃 SESSION.md 字节数超上限（`sessionKeeper.sessionMdMaxKB`，默认 100 KB，0 = 关闭）→ 提示暂停工作、加载 eap、按 EAP 分层骨架重写；四条原则（保留骨架 / 内容可外移 references / 允许整合不重要事项 / 自主裁量权充分）宿主内嵌，不归 CCC；超限每轮提醒 → 连续 3 轮升级强制 → 回限内自动停止；**不机械阻断**（与 LIMIT 同族）；**无 ACK → 不需 Session 块预声明**
+- **§5.11 新增 rebuild 交接协议**（写侧 + 读侧）：写侧 = rebuild 提醒要求把 in-flight 事项写在 SESSION.md 最末尾的固定英文标题 `## In-flight (rebuild handover)` 之下；读侧 = 重建锚点要求读该区块并逐项处理（缺失则从最新进度条目推断）；两侧引用**同一标题常量**（单一真相源）；读侧取"软指令"而非机械摘取（避免第二真相源）
+- **§3.1 配置**：`sessionKeeper` 段补 `sessionMdMaxKB`（默认 100；0 = 关闭）
+- **package.json**：version 1.5.1 → 1.5.2
+
 ## v1.5.1 (2026-09-09)
 
 与 dsp v1.31.0 对齐（S142，用户洞察「既然微信桥是我们 ACC 提供的，那么发送能力也应该是 ACC 的工具，配置了则可用、不配置则不可见」）：
