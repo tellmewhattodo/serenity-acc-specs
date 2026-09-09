@@ -235,11 +235,17 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | `localstore` | ACC 凭据/配置存储（CCC 根 localstore.json；git 策略 gitTrack） | 保留 |
 | `autopilot-trajectory` | Autopilot 一站式管理：all/init/random/diag/doc/check/status/guide（**非标准条款**——自主轨迹实验工具） | 保留 |
 
+**条件可见（v1.5.1 明确的机制，可选能力适用）**：工具可声明"本 CCC 未配置该能力时不可见"——实现方式 =
+在会话就绪/每步同步点调宿主的作用域工具收窄（dsp：`agent.ctx.tools.restrict({ deny: [...] })`，
+与 safe-mode 同一机制）把工具**从 schema 移除**，而非"可见但调用期拒绝"。判据必须来自**本 CCC 的配置**
+（如 `weixin.enabled`），随配置热更新即时生效；会话销毁时清理收窄状态。此机制不改变 §4.1 最小公共集。
+
 ### 4.2 非必需（平台原生优先）
 
 | 工具 | 说明 |
 |------|------|
 | Skiff / ACP / 微信桥 / Autopilot 唤起 | 宿主特定产品能力（v1.25~v1.27 dsp），不升标准；需要时 dsp 侧文档为准 |
+| `im-bridge` | **IM 发送家族（dsp v1.31.0）**：参数 channel/action/user/text/file/caption/account（action = send / send-file / users / status）；**条件可见**（本 CCC 未启用任何 IM 通道则从工具面移除）；**只能操作本会话 CCC**（无目标 CCC 参数）；发送与记录复用桥（outgoing hook `source: "proactive"`）。属宿主特定产品能力（当前仅微信通道），不升标准；新增 IM 通道 = 注册一个通道实现，不改工具名与参数形状 |
 | `resident` | 常驻 agent（宿主超集优先，如 DSH 后台 subagent / Autopilot 时钟唤起） |
 
 ### 4.3 MSM 注册表（mech-registry.json）
@@ -756,7 +762,8 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ## 11. 标准演化
 
-- **版本**：v1.5.0（2026-09-08，承接 v1.4.0——提示词机制命名 **Induction** + §5 骨架化 8 块五层）
+- **版本**：v1.5.1（2026-09-09，承接 v1.5.0——§4.2 补 `im-bridge`（IM 发送家族，宿主特定）+ 条件可见机制条目）
+- **v1.5.1 新增/确认（S142，dsp v1.31.0 对齐）**：**§4.2 新增 `im-bridge`**（IM 发送家族：channel/action/user/text/file/caption/account；**条件可见**——本 CCC 未启用任何 IM 通道则从工具面移除；**只能操作本会话 CCC**；发送与记录复用桥）；**§4.1 补「条件可见」机制条目**（作用域工具收窄 = 从 schema 移除而非调用期拒绝；判据来自本 CCC 配置、热更新生效、会话销毁清理；**不改变最小公共集**）；**附录 A** dsp 列 10 → 11 工具。依据 = 用户洞察「微信桥是 ACC 提供的 → 发送能力也应是 ACC 的工具，配置了则可用、不配置则不可见」（归属二分：机制与数据归 ACC，措辞与纪律归 CCC）
 - **v1.5.0 新增/确认（S142，用户拍板命名：提示词机制名 = Induction）**：**系统提示注入机制统称 Induction（成员装配）**——把新实例（新会话 / rebuild 重建 / 新 agent）引入为轨迹成员的装配机制；§5 重构为 **Induction 骨架**（8 块五层：A 主体定义层（ACC/Principles/CCE）/ B 质量规范层（EAP）/ C 状态调节层（状态）/ D 工作供给层（SKILL/Tools）/ E 任务指示层（Session），稳定→易变装配序 + rationale）；Metaphor 定位澄清为**渲染层**（不计入 8 块骨架）；术语表新增 Induction；I5 措辞更新（注入内容一致 → Induction 内容一致）
 - **v1.4.0 新增/确认（S142，用户拍板"specs §4 最小公共集改用 dsp v1.30 新名 + A 全量语义同步"）**：**§4 工具契约名 v1.30 体系**（container_fs/container_git/logbook/msm/container_admin/dashboard/praxis/handyman/localstore/autopilot-trajectory——用户裁决链 ①~⑩ 硬切无别名；改名对照表 §4.4）；**§4.3 registry 单级聚合 + 写保护 + dashboard health registry 完整性段**（dsp v1.28.0 ⑤）；**§5 注入结构 8→9 块**（Tools 独立殿后，dsp v1.28.0 ③）+ **全英化**（EAP/Principles/session-trajectory 关系，dsp v1.23.0）+ **星舰 Metaphor 全文**（dsp v1.29.0 ①）+ **trajectory-assistant token 体系**（CHECKPOINT/LIMIT/REBUILD/BOUNDARY GUARD，dsp v1.29.0 ②）；会话命名 summary ≤20 字约定（§5.9 Session 块 + logbook 语义）；handyman 替代 loop（§4.1）；修复章节编号 bug（原 §5 误标 `## 4.`）
 - **v1.3.1 新增/确认（S142 用户定义升级）**：**Session = Trajectory 的可重建载体**——§0.3.1 新增（同义视角 + 载体视角）；§2 术语表新增 Session 术语、修订 Trajectory；§0.1 定义微调（发生发生在载体中；再发生时载体与推动者均可换）；I6 扩展（载体可丢弃重建，轨迹身体与身份不可销毁）；§5.2 Metaphor 第 7 条修订（The Logbook → 载体关系显式化：sessions are rebuildable carriers / Discard the carrier, keep the logbook）；§5.10 会话追踪提醒改名 **trajectory-steward**（用户定名：trajectory 维护机制 + 机制预声明要求 + 提醒文本统一 + 改名兼容说明）；§5.8 Session 块附 steward 预声明（注：编号为 v1.3.1 当时 8 块结构；v1.4.0 起 Session=§5.9 / steward 机制=§5.11）
@@ -775,7 +782,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 | §3 CCC 结构 | .serenity/AGENT_SESSIONS/docs/.opencode/skills/mech-registry.json | 同 + .dsh/ 并存；mech-registry 单级聚合于 `.opencode/skills/<ccc-name>/references/` | ⚠️ osp 待同步（注册表位置） |
 | §3.1 配置 | `.opencode/serenity.json`（handyman/sessionKeeper/safeMode） | `.dsh/serenity.json` 回退 `.opencode/serenity.json`（v1.19.5 起无 bootstrap 段——first-anchor 零配置） | ✅ |
 | §3.2 入口技能 | `.serenity` 内容 = 入口 skill 名 + .opencode/skills/*-serenity | `.serenity` 内容 / .dsh/entry-skill / .opencode/skills / .dsh/skills 四源 | ✅（dsp 超集） |
-| §4 工具 | 待按 v1.4 改名（现 msm×3/cc-fs/cc-git/session/acc_kit/eap/neat/loop/resident） | **10 工具 v1.30 体系**（container_fs/container_git/container_admin/msm/praxis/logbook/dashboard/handyman/localstore/autopilot-trajectory——硬切无别名） | ⚠️ osp 待改名对齐 |
+| §4 工具 | 待按 v1.4 改名（现 msm×3/cc-fs/cc-git/session/acc_kit/eap/neat/loop/resident） | **11 工具 v1.31 体系**（container_fs/container_git/container_admin/msm/praxis/logbook/dashboard/handyman/localstore/autopilot-trajectory + **im-bridge（条件可见，§4.2）**——硬切无别名） | ⚠️ osp 待改名对齐 |
 | §4.3 registry 保护 | 待同步（单级聚合 + 写保护 + 健康检查） | ⑤a 单级化 references/ 聚合档 + ⑤b 写 deny 读 allow + ⑤c checkRegistryHealth 入 dashboard health | ⚠️ osp 待同步 |
 | §5.1 ACC 块 | compacting.ts accBlock（含 Root，待去 Root + 去工具清单） | system-prompt.ts identityBlock（v1.19.6 去 Root；v1.28 工具清单移出为 toolsBlock） | ⚠️ osp 待同步 |
 | §5.2 Metaphor | **无（待新增 10 条星舰全文）** | system-prompt.ts metaphorBlock（10 条，v1.19.9 定稿 + v1.29 星舰意象） | ⚠️ osp 待新增 |
