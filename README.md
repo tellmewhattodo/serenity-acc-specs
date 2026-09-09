@@ -1,6 +1,6 @@
-# Serenity-ACC 认知容器标准（Specs v1.5.2）
+# Serenity-ACC 认知容器标准（Specs v1.5.3）
 
-> **状态**：v1.5.2（2026-09-09，与 dsp v1.31.1 对齐——§5.11 新增 token `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒）+ rebuild 交接协议（in-flight 区块，写侧/读侧同源标题）+ §3.1 补 `sessionKeeper.sessionMdMaxKB`）——承接 v1.5.1（§4.2 `im-bridge` + 条件可见机制）+ v1.5.0（提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层））+ v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
+> **状态**：v1.5.3（2026-09-09，与 dsp v1.31.2 对齐——`sessionKeeper.sessionMdMaxKB` 缺省 **100 → 200 KB**，§3.1 + §5.11 同步）——承接 v1.5.2（§5.11 新增 token `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒）+ rebuild 交接协议（in-flight 区块，写侧/读侧同源标题）+ §3.1 补 `sessionKeeper.sessionMdMaxKB`）+ v1.5.1（§4.2 `im-bridge` + 条件可见机制）+ v1.5.0（提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层））+ v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
 > **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 **dsp 领先**（v1.19.9 → v1.31.1），specs 跟随 dsp 领先实现（§4 工具契约名 v1.4.0 起用 dsp v1.30 新名；v1.5.0 提示词机制命名 Induction；v1.5.2 trajectory-assistant 两项增强）；**osp/pi 按本 spec 待同步**（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
@@ -195,7 +195,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 ```jsonc
 {
   "handyman": { "models": ["provider/model"], "defaultModel": "provider/model" },  // 杂工白名单模型（v1.4：原 loop 字段语义）
-  "sessionKeeper": { "threshold": 100, "sessionMdMaxKB": 100 },  // 会话追踪提醒阈值（默认 100）+ SESSION.md 体积上限 KB（默认 100；0 = 关闭）
+  "sessionKeeper": { "threshold": 100, "sessionMdMaxKB": 200 },  // 会话追踪提醒阈值（默认 100）+ SESSION.md 体积上限 KB（默认 200；0 = 关闭）
   "safeMode": { "blacklist": [".secrets/", "regex:\\.env$"] }  // 写入黑名单（前缀 / regex:）
 }
 ```
@@ -664,7 +664,7 @@ never reuse a prior code.
 ```
 
 - **token 体系（v1.4 / v1.5.2）**：CHECKPOINT（计分达阈值）/ `· LIMIT`（上下文压力 rebuild 提醒，普通 + `· MANDATORY` 升级）/ `· REBUILD`（重建锚点头）/ `· BOUNDARY GUARD`（输出守卫打回，仅外部面）/ `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒，v1.5.2）/ `[Autopilot Trajectory · 唤起]`（autopilot 唤起头）/[ACC]（身份信标，保留）
-- **SESSION.md 体积超限提醒（LOGBOOK COMPACTION，v1.5.2，dsp v1.31.1）**：活跃 SESSION.md 字节数超上限（`sessionKeeper.sessionMdMaxKB`，默认 100 KB，0 = 关闭）→ 提示暂停当前工作、加载 eap、按 EAP 分层骨架重写 SESSION.md。四条原则（宿主内嵌，不归 CCC）：① 保留 EAP 分层骨架 ② 内容可外移到 references 文件（SESSION.md 留链接）③ 允许整合/删除不重要事项 ④ 自主裁量权充分允许（唯一硬要求 = 骨架 + 未决项/决策理由/下一步仍可重建）。节奏：超限每轮提醒 → 连续 3 轮升级强制语气 → 回到限内自动停止（自愈）。**不机械阻断**（与 LIMIT 同族，重写是大工程，打断会破坏进行中的任务）。**无 ACK 协议 → 不需 Session 块预声明**（对齐 LIMIT/REBUILD 同族；§5.9 预声明仅覆盖 CHECKPOINT 计分与 ACK）
+- **SESSION.md 体积超限提醒（LOGBOOK COMPACTION，v1.5.2，dsp v1.31.1；缺省值 v1.5.3 调整为 200 KB）**：活跃 SESSION.md 字节数超上限（`sessionKeeper.sessionMdMaxKB`，默认 **200 KB**（v1.5.3 起，原 100），0 = 关闭）→ 提示暂停当前工作、加载 eap、按 EAP 分层骨架重写 SESSION.md。四条原则（宿主内嵌，不归 CCC）：① 保留 EAP 分层骨架 ② 内容可外移到 references 文件（SESSION.md 留链接）③ 允许整合/删除不重要事项 ④ 自主裁量权充分允许（唯一硬要求 = 骨架 + 未决项/决策理由/下一步仍可重建）。节奏：超限每轮提醒 → 连续 3 轮升级强制语气 → 回到限内自动停止（自愈）。**不机械阻断**（与 LIMIT 同族，重写是大工程，打断会破坏进行中的任务）。**无 ACK 协议 → 不需 Session 块预声明**（对齐 LIMIT/REBUILD 同族；§5.9 预声明仅覆盖 CHECKPOINT 计分与 ACK）
 - **rebuild 交接协议（v1.5.2，dsp v1.31.1）**：**写侧** = rebuild 提醒（LIMIT）要求把手头 in-flight 事项（卡在哪一步 / 尚未完成什么 / 下一步动作）写在 SESSION.md **最末尾**的固定英文标题 `## In-flight (rebuild handover)` 之下；**读侧** = 重建锚点要求读该区块并逐项处理（区块缺失 → 从最新进度条目推断）。两侧引用**同一标题常量**（单一真相源——标题漂移则读侧找不到写侧写的区块）。读侧取"软指令"而非机械摘取（机械摘取会把区块内容复制进锚点 = 第二真相源）
 - ACK 码（{code}）3 位随机（字母+数字）；ACK 后积分清零；持续注入直至收到正确 code
 - **改名兼容（v1.3.1 steward / v1.4 assistant）**：旧前缀 `[SESSION-KEEPER]` → `[TRAJECTORY-STEWARD]`（v1.3.1）→ `[TRAJECTORY-ASSISTANT · CHECKPOINT]`（v1.4，并入 assistant 体系）；ACK 码单次使用、不跨会话持久化，改名对既有会话零影响；机制名内部标识可保留，对外文本前缀必须一致
@@ -764,7 +764,8 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ## 11. 标准演化
 
-- **版本**：v1.5.2（2026-09-09，承接 v1.5.1——§5.11 补 `LOGBOOK COMPACTION` token 与 rebuild 交接协议 + §3.1 补 `sessionMdMaxKB`）
+- **版本**：v1.5.3（2026-09-09，承接 v1.5.2——`sessionMdMaxKB` 缺省 100 → 200 KB）
+- **v1.5.3 变更（S142，dsp v1.31.2 对齐）**：**`sessionKeeper.sessionMdMaxKB` 缺省值 100 → 200 KB**（§3.1 示例 + §5.11 条目同步）——依据 = 用户"SESSION.md的默认阈值设定在200kb吧"；理由 = 100 KB 对长期维护会话偏紧（每轮催 = 提醒疲劳，而重写是大工程），200 KB 仍挡住无界增长；**显式配置（含 0）不受影响**（CCC 级配置始终优先）
 - **v1.5.2 新增/确认（S142，dsp v1.31.1 对齐）**：**§5.11 新增 token `· LOGBOOK COMPACTION`**（SESSION.md 体积超限重写提醒：`sessionKeeper.sessionMdMaxKB` 默认 100 KB / 0 关；四条原则宿主内嵌；连续 3 轮升级；回限内自愈；**不机械阻断**；无 ACK → 不需预声明）；**§5.11 新增 rebuild 交接协议**（写侧要求把 in-flight 事项写在 SESSION.md 末尾固定标题 `## In-flight (rebuild handover)` 之下；读侧重建锚点要求读该区块并逐项处理；两侧同源标题常量；读侧软指令非机械摘取）；**§3.1 补 `sessionKeeper.sessionMdMaxKB`**。依据 = 用户两条需求（轨迹身体只增不减的治理 / rebuild 后手头事项的交接）
 - **v1.5.1 新增/确认（S142，dsp v1.31.0 对齐）**：**§4.2 新增 `im-bridge`**（IM 发送家族：channel/action/user/text/file/caption/account；**条件可见**——本 CCC 未启用任何 IM 通道则从工具面移除；**只能操作本会话 CCC**；发送与记录复用桥）；**§4.1 补「条件可见」机制条目**（作用域工具收窄 = 从 schema 移除而非调用期拒绝；判据来自本 CCC 配置、热更新生效、会话销毁清理；**不改变最小公共集**）；**附录 A** dsp 列 10 → 11 工具。依据 = 用户洞察「微信桥是 ACC 提供的 → 发送能力也应是 ACC 的工具，配置了则可用、不配置则不可见」（归属二分：机制与数据归 ACC，措辞与纪律归 CCC）
 - **v1.5.0 新增/确认（S142，用户拍板命名：提示词机制名 = Induction）**：**系统提示注入机制统称 Induction（成员装配）**——把新实例（新会话 / rebuild 重建 / 新 agent）引入为轨迹成员的装配机制；§5 重构为 **Induction 骨架**（8 块五层：A 主体定义层（ACC/Principles/CCE）/ B 质量规范层（EAP）/ C 状态调节层（状态）/ D 工作供给层（SKILL/Tools）/ E 任务指示层（Session），稳定→易变装配序 + rationale）；Metaphor 定位澄清为**渲染层**（不计入 8 块骨架）；术语表新增 Induction；I5 措辞更新（注入内容一致 → Induction 内容一致）
