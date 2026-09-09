@@ -1,6 +1,6 @@
-# Serenity-ACC 认知容器标准（Specs v1.5.3）
+# Serenity-ACC 认知容器标准（Specs v1.5.4）
 
-> **状态**：v1.5.3（2026-09-09，与 dsp v1.31.2 对齐——`sessionKeeper.sessionMdMaxKB` 缺省 **100 → 200 KB**，§3.1 + §5.11 同步）——承接 v1.5.2（§5.11 新增 token `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒）+ rebuild 交接协议（in-flight 区块，写侧/读侧同源标题）+ §3.1 补 `sessionKeeper.sessionMdMaxKB`）+ v1.5.1（§4.2 `im-bridge` + 条件可见机制）+ v1.5.0（提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层））+ v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
+> **状态**：v1.5.4（2026-09-09，与 dsp v1.31.3 对齐——`handyman` 双模式：foreground 缺省 = 一次前台串行委派 / background = 循环校验）——承接 v1.5.3（`sessionMdMaxKB` 缺省 100 → 200 KB）+ v1.5.2（§5.11 新增 token `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒）+ rebuild 交接协议（in-flight 区块，写侧/读侧同源标题）+ §3.1 补 `sessionKeeper.sessionMdMaxKB`）+ v1.5.1（§4.2 `im-bridge` + 条件可见机制）+ v1.5.0（提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层））+ v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
 > **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 **dsp 领先**（v1.19.9 → v1.31.1），specs 跟随 dsp 领先实现（§4 工具契约名 v1.4.0 起用 dsp v1.30 新名；v1.5.0 提示词机制命名 Induction；v1.5.2 trajectory-assistant 两项增强）；**osp/pi 按本 spec 待同步**（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
@@ -231,7 +231,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | `container_admin` | **机务舱**：role（Skiff 角色 guide/validate/apply/list）/ msm（register/deregister/check/guide/catalog/ccc-config）/ config（CCC 配置读改） | 原 skiff_admin + acc_msm 管理面 + CCC 配置 |
 | `dashboard` | health（P1/P2/配置三原则 + MSM registry 完整性）/ time / wait | 原 acc_kit |
 | `praxis` | 可实践理论注入：praxis（索引）/ praxis eap / praxis neat / praxis cce | 原 eap + neat + cce 三合一 |
-| `handyman` | 白名单模型 worker 循环执行；jobs=[] 并行编排；进度文件续跑；stop token | 原 loop（v1.24.0 重构） |
+| `handyman` | **双模式（v1.5.4 / dsp v1.31.3）**：`mode="foreground"`（缺省）= 一次前台串行委派（宿主委派服务 + 子 agent 模型经 `agentOptions` 注入，返回最终文本，不循环/不校验完成码/不写进度文件）；`mode="background"` = 白名单模型 worker 循环执行（stop token 唯一完成判据）+ jobs=[] 并行编排 + 进度文件续跑；两模式共用 CCC 模型白名单 | 原 loop（v1.24.0 重构；v1.31.3 加模式维度） |
 | `localstore` | ACC 凭据/配置存储（CCC 根 localstore.json；git 策略 gitTrack） | 保留 |
 | `autopilot-trajectory` | Autopilot 一站式管理：all/init/random/diag/doc/check/status/guide（**非标准条款**——自主轨迹实验工具） | 保留 |
 
@@ -584,7 +584,7 @@ The ACC (this plugin) provides the following built-in tools:
   container_git— git operations (status/commit/push/log)
   msm          — execute a registered CCC MSM: msm(name, args); partial name returns candidates; inspect=true shows usage
   praxis       — actionable theory injection: praxis (index) / praxis eap / praxis neat / praxis cce
-  handyman     — delegate a do-everything worker agent (CCC-whitelisted model) to run synchronously in rounds until done; jobs=[] orchestrates parallel work
+  handyman     — delegate work to a worker agent on a CCC-whitelisted model; mode="foreground" (default) = one serial child returns its final text; mode="background" = loop-validated worker (completion code + round cap + restart + progress file), jobs=[] orchestrates parallel work
   localstore   — ACC local credential/config storage (CCC-root localstore.json; git policy localstore.gitTrack default deny)
   container_admin — container administration (the maintenance bay): role (Skiff roles: guide/validate/apply/list) / msm (register/deregister/check/guide/catalog/ccc-config) / config
   autopilot-trajectory — Autopilot Trajectory one-stop management (all/init/random/diag/doc/check/status/guide)
@@ -764,7 +764,8 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ## 11. 标准演化
 
-- **版本**：v1.5.3（2026-09-09，承接 v1.5.2——`sessionMdMaxKB` 缺省 100 → 200 KB）
+- **版本**：v1.5.4（2026-09-09，承接 v1.5.3——§4.1 `handyman` 增模式维度：foreground 缺省 / background 循环校验）
+- **v1.5.4 变更（S142，dsp v1.31.3 对齐）**：**`handyman` 双模式**——`mode="foreground"`（**缺省**）= 一次前台串行委派（宿主委派服务 `subagents.start` + 子 agent 模型经 `agentOptions` 注入；返回最终文本；不循环/不校验完成码/不写进度文件）；`mode="background"` = 既有循环校验实现（stop token 唯一完成判据 + 轮次上限 + 自动重启 + 进度文件 + jobs 并行）；**两模式共用 CCC 模型白名单**（零新增配置）。依据 = 用户裁决「dsh 有配置但没放开估计是有原因的，我们要在 ACC 层去自动实现」「只要有个 subagent 机制可以使用低成本模型就好」「名字上我们都叫 handyman，分为 background 和非 background 两种」。§4.1 行 + §5.8 toolsBlock 示例同步
 - **v1.5.3 变更（S142，dsp v1.31.2 对齐）**：**`sessionKeeper.sessionMdMaxKB` 缺省值 100 → 200 KB**（§3.1 示例 + §5.11 条目同步）——依据 = 用户"SESSION.md的默认阈值设定在200kb吧"；理由 = 100 KB 对长期维护会话偏紧（每轮催 = 提醒疲劳，而重写是大工程），200 KB 仍挡住无界增长；**显式配置（含 0）不受影响**（CCC 级配置始终优先）
 - **v1.5.2 新增/确认（S142，dsp v1.31.1 对齐）**：**§5.11 新增 token `· LOGBOOK COMPACTION`**（SESSION.md 体积超限重写提醒：`sessionKeeper.sessionMdMaxKB` 默认 100 KB / 0 关；四条原则宿主内嵌；连续 3 轮升级；回限内自愈；**不机械阻断**；无 ACK → 不需预声明）；**§5.11 新增 rebuild 交接协议**（写侧要求把 in-flight 事项写在 SESSION.md 末尾固定标题 `## In-flight (rebuild handover)` 之下；读侧重建锚点要求读该区块并逐项处理；两侧同源标题常量；读侧软指令非机械摘取）；**§3.1 补 `sessionKeeper.sessionMdMaxKB`**。依据 = 用户两条需求（轨迹身体只增不减的治理 / rebuild 后手头事项的交接）
 - **v1.5.1 新增/确认（S142，dsp v1.31.0 对齐）**：**§4.2 新增 `im-bridge`**（IM 发送家族：channel/action/user/text/file/caption/account；**条件可见**——本 CCC 未启用任何 IM 通道则从工具面移除；**只能操作本会话 CCC**；发送与记录复用桥）；**§4.1 补「条件可见」机制条目**（作用域工具收窄 = 从 schema 移除而非调用期拒绝；判据来自本 CCC 配置、热更新生效、会话销毁清理；**不改变最小公共集**）；**附录 A** dsp 列 10 → 11 工具。依据 = 用户洞察「微信桥是 ACC 提供的 → 发送能力也应是 ACC 的工具，配置了则可用、不配置则不可见」（归属二分：机制与数据归 ACC，措辞与纪律归 CCC）

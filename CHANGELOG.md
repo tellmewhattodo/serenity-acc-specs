@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.4 (2026-09-09)
+
+与 dsp v1.31.3 对齐（S142，用户裁决「dsh 有配置但没放开估计是有原因的，我们要在 ACC 层去自动实现」「只要有个 subagent 机制可以使用低成本模型就好」「名字上我们都叫 handyman，分为 background 和非 background 两种」）：
+
+- **§4.1 `handyman` 增模式维度**：`mode="foreground"`（**缺省**）= 一次前台串行委派——宿主委派服务 `subagents.start` + 子 agent 模型经 `agentOptions` 注入，返回最终文本，不循环/不校验完成码/不写进度文件；`mode="background"` = 既有循环校验实现（stop token 唯一完成判据 + 轮次上限 + 自动重启 + 进度文件 + jobs 并行）；**两模式共用 CCC 模型白名单**（零新增配置）
+- **§5.8 toolsBlock 示例**同步 handyman 行（两模式措辞）
+- **归属说明**：机制归 ACC（委派与模型注入），模型归 CCC（白名单指向低成本模型）；不依赖宿主未放开的 `subagent-model-selection` 设置
+- **package.json**：version 1.5.3 → 1.5.4
+
 ## v1.5.3 (2026-09-09)
 
 与 dsp v1.31.2 对齐（S142，用户"SESSION.md的默认阈值设定在200kb吧"）：
