@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.6.0 (2026-09-15)
+
+与 **dsp v1.34** 对齐（S142；用户 2026-09-15 裁决「要改就都改了」——`trajectory` → `container_trajectory` 为**准确性调整**非美学偏好；specs 在本 trajectory 内改，osp 不动）：
+
+- **§4 工具契约名同步**：
+  - ① `trajectory` → **`container_trajectory`**（硬切无别名，先例 D46）；**specs 侧一并改正 v1.30 旧名 `logbook`**（specs 停在 v1.30 名，本次直落 v1.34 名）。理由一句话：它是 ACC 提供的**容器内** trajectory 机制，一等公民 ≠ 与容器平级，前缀 `container` 表**作用域**
+  - ② **动作面收敛为 6 个**（dsp v1.33 合并后）：`list`（并入统计/异常标注）/ `show` / `create` / `use`（内联三项完整性检查：存在性 / 空壳 / 长期无活动——通过静默、不通过提示）/ `rebuild`（原地清空重建 = Ship of Theseus）/ **`wake-later`**（= 原 wake-add）。**已淘汰**：`close` / `archive`（归档改走 `container_fs mv`）/ `health`·`qa`·`summary`（并入 `use`·`list`）/ `hook-develop-guide`（并入 `container_admin msm guide` 的 SEP 章节）/ `wake-list`·`wake-rm`
+  - ③ **autopilot 面归机务舱**：`autopilot-trajectory` **不再是独立契约工具** ⇒ 能力 = `container_admin autopilot` 域（`status`/`init`/`generate-bias`，对应脚本历史动作名 all/init/random）。§4.1 行删并（并入 `container_admin` 备注）、§4.4 映射改写
+- **§4.2 新增 `acc-diag`**（专属运行态诊断工具）+ **§4.1 新增「专属工具」段**：默认对所有 CCC 隐藏，判据 = CCC `.opencode/serenity.json` 的 `exclusiveTools` **逐字声明**该工具名——机制 = **复用条件可见**（`tools.restrict` 工具级 deny，从 schema 移除）；只读；ACC 负责人专用，不升标准
+- **§4.1 新增「两个独立全局闸」段**（dsp v1.34 S-1 解耦）：`wakeSchedulerEnabled`（一次性唤醒调度器，**缺省开**，无回退键）/ `autopilotWakeEnabled`（周期自唤醒，**缺省关**；迁移期回退旧键 `autopilotEnabled`，用 `??` 保证新键显式 `false` 覆盖旧键 `true`）。**根因** = 旧实现共用一闸（`trajectoryEnabled || autopilotEnabled`）导致「关掉周期自唤醒连带 `wake-later` 静默滞留」
+- **§4 命名判据入标准**（出处 `docs/acc-story.md` §11.2「命名继承背景：cc_xx → container_xx」）：**`container_<X>` = 掌管本容器自身之 X 的工具**；前缀 `container` 表**作用域**，不表"与容器平级"；非容器族工具主语不是容器结构（msm/praxis/handyman/dashboard/localstore）
+- **§5 提示词文本同步**：§5.3 Principles 内 `rebuild (logbook rebuild)` → `rebuild (container_trajectory rebuild)`；**§5.2 Metaphor 第 6/7 条**随 dsp v1.33 已改的措辞同步（`logbook (SESSION)` → `the ship's log (SESSION)`、`The Logbook → Session Tracking` → `The Ship's Log → Trajectory Tracking`、`keep the logbook` → `keep the log`）——隐喻域用词保留、工具名残留清除；**§5.8 toolsBlock** 换为 dsp 现行 9 行 + MSM 调用 4 行（`container_trajectory` 行 + `container_admin` 行含 autopilot 域），并注明**条件可见工具（im-bridge / acc-diag）不列此行**
+- **§0 理论章内的机制名指针**：`session_rebuild` / `logbook rebuild` → `container_trajectory rebuild`（6 处：§0.1/§0.3.1×2/§0.5/§0.6 及 §0.3 载体段）——当前态表述用新名（概念词 trajectory / Ship of Theseus 不动）
+- **§2 术语表 / I6**：`logbook rebuild` → `container_trajectory rebuild`
+- **§11 演化 + 附录 A**：版本 → v1.6.0；附录 A dsp 列 v1.30.4 → **v1.34**、§4 行工具面 → 11 工具 v1.34 体系（含 acc-diag 专属可见）、§5.8 行 10 行 → 9 行、§9 checklist → v1.34 命名
+- **experiments/autopilot-trajectory/**：**用 dsp 现行版整体覆盖**（`SKILL.md` + `scripts/autopilot-trajectory.ts`，逐文件字节一致）——脚本头注/提示文案改为 `container_admin autopilot status|init|generate-bias`、`loadConfig` 支持 `trajectory.autopilot` → `autopilotTrajectory` → `autotrajectory` 逐级回退、`init` 写新键并删旧键（避免双真相源）
+- **docs/self-sustaining-trajectory-hypothesis.md §7.1**：参与指南命令同步（`msm autopilot-trajectory init/random` → `container_admin autopilot init/generate-bias`；配置键 `autopilotTrajectory` → `trajectory.autopilot`）
+- **package.json**：version 1.5.4 → 1.6.0
+
+**本次未覆盖 / 已知残留**：
+
+- **dsp 代码侧工具名更名（P1）在工作树中尚未落地**——核对时 dsp 工作树 `src/invariant.ts` 的 `REGISTERED_TOOLS`、`dsh.plugin.json` 的 `contributes.tools`、`src/tools/trajectory.ts` 的注册名仍为旧名 `trajectory`（`dsh.plugin.json` version 仍 1.32.0）；v1.34 的其余变更（两闸解耦 / `acc-diag` / autopilot 归 `container_admin`）已在该工作树中存在。**本条目按 dsp v1.34 目标命名面同步**（更名实施基线见 `dsh-serenity-plugin/docs/container-trajectory-rename.md` §6 P5：specs 与 P1 同批）
+- **osp 侧待同步**：osp 工具面仍为 `logbook`（另一运行时，遵循边界「osp 不动」）；附录 A ⚠️ 行未变
+- **`docs/acc-story.md` 历史叙述未改**（第 11 节「工具面重构：从 13 工具到 10 工具（2026-09-06，v1.30.0 + specs v1.4.0）」§11.3 最终形态表仍列 `logbook`/`autopilot-trajectory`）——历史记录保持原样（可重建性资产）；第 11 节未追加 v1.33/v1.34 续章（如需，另行落笔）
+
 ## v1.5.4 (2026-09-09)
 
 与 dsp v1.31.3 对齐（S142，用户裁决「dsh 有配置但没放开估计是有原因的，我们要在 ACC 层去自动实现」「只要有个 subagent 机制可以使用低成本模型就好」「名字上我们都叫 handyman，分为 background 和非 background 两种」）：
