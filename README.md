@@ -1,8 +1,8 @@
-# Serenity-ACC 认知容器标准（Specs v1.6.0）
+# Serenity-ACC 认知容器标准（Specs v1.6.1）
 
-> **状态**：v1.6.0（2026-09-15，与 **dsp v1.34** 对齐——工具契约名同步：`trajectory` → **`container_trajectory`**（硬切无别名）＋ autopilot 面归 **`container_admin`** 机务舱（不再列独立工具）＋ 专属工具 **`acc-diag`**（条件可见家族）＋ **两个独立全局闸**解耦（`wakeSchedulerEnabled` 缺省开 / `autopilotWakeEnabled` 缺省关）＋ **命名判据**（`container_<X>` = 掌管本容器自身之 X）写入 §4）——承接 v1.5.4（`handyman` 双模式：foreground 缺省 = 一次前台串行委派 / background = 循环校验）+ v1.5.3（`sessionMdMaxKB` 缺省 100 → 200 KB）+ v1.5.2（§5.11 新增 token `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒）+ rebuild 交接协议（in-flight 区块，写侧/读侧同源标题）+ §3.1 补 `sessionKeeper.sessionMdMaxKB`）+ v1.5.1（§4.2 `im-bridge` + 条件可见机制）+ v1.5.0（提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层））+ v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
+> **状态**：v1.6.1（2026-09-15，与 **dsp v1.34.1 代码态**对齐——① **§5.12 新增「轨迹声明的 skill 供给」**（轨迹在其 `SESSION.md` frontmatter 用 `skills:` 声明要挂的 skill，ACC 在**绑定期间**注入各 `SKILL.md` 全文——**SEP 废除后的替代机制**）＋ ② **SEP 废除的文档收尾**（§4.1 两处现行时引用清除；§5.8 toolsBlock 镜像行**逐字**回同步）＋ ③ **§5.7 注入形态按实现改正**（原文直推无包裹头 / 多入口空行分隔）＋ ④ **§4.1 两条契约级补记**（autopilot 的**报告与判据同源** / 两闸**每次求值读取**、从关到开无需重启））——承接 v1.6.0（2026-09-15，与 **dsp v1.34** 对齐——工具契约名同步：`trajectory` → **`container_trajectory`**（硬切无别名）＋ autopilot 面归 **`container_admin`** 机务舱（不再列独立工具）＋ 专属工具 **`acc-diag`**（条件可见家族）＋ **两个独立全局闸**解耦（`wakeSchedulerEnabled` 缺省开 / `autopilotWakeEnabled` 缺省关）＋ **命名判据**（`container_<X>` = 掌管本容器自身之 X）写入 §4）+ v1.5.4（`handyman` 双模式：foreground 缺省 = 一次前台串行委派 / background = 循环校验）+ v1.5.3（`sessionMdMaxKB` 缺省 100 → 200 KB）+ v1.5.2（§5.11 新增 token `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒）+ rebuild 交接协议（in-flight 区块，写侧/读侧同源标题）+ §3.1 补 `sessionKeeper.sessionMdMaxKB`）+ v1.5.1（§4.2 `im-bridge` + 条件可见机制）+ v1.5.0（提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层））+ v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
-> **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 **dsp 领先**（v1.19.9 → **v1.34**），specs 跟随 dsp 领先实现（§4 工具契约名 v1.4.0 起用 dsp 新名，v1.6.0 同步至 dsp v1.34；v1.5.0 提示词机制命名 Induction；v1.5.2 trajectory-assistant 两项增强）；**osp/pi 按本 spec 待同步**（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
+> **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 **dsp 领先**（v1.19.9 → **v1.34**，代码态 **v1.34.1**），specs 跟随 dsp 领先实现（§4 工具契约名 v1.4.0 起用 dsp 新名，v1.6.0 同步至 dsp v1.34、v1.6.1 同步至 dsp v1.34.1 代码态；v1.5.0 提示词机制命名 Induction；v1.5.2 trajectory-assistant 两项增强）；**osp/pi 按本 spec 待同步**（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
 > **仓库**：[github.com/tellmewhattodo/serenity-acc-specs](https://github.com/tellmewhattodo/serenity-acc-specs)（公开标准仓库）
 
@@ -15,7 +15,7 @@
 - §2 术语
 - §3 CCC 结构约定（宿主无关）
 - §4 工具契约（宿主无关）
-- §5 Induction（成员装配，8 块五层，**重点**）
+- §5 Induction（成员装配，8 块五层，**重点**；+ §5.12 轨迹声明的 skill 供给——条件供给，不计入 8 块骨架）
 - §6 拦截缝语义
 - §7 激活协议
 - §8 skill 格式兼容基线
@@ -162,6 +162,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | **认知介质**（v1.3） | LLM / Runtime / Tools。产生下一步认知与行动的介质，可替换，不属于轨迹本体（§0.3）。 |
 | **trajectory-assistant**（v1.4，dsp v1.29 定名） | 过程性动态提示注入机制的统称（Trajectory Steward 计分督促 + 重建提醒 + 输出守卫打回 + Autopilot 唤起）。关卡化设计：token 常量单一真相源 + 风格 facade；**关卡思想限结构与时机，提示词用词禁游戏黑话**（CHECKPOINT/LIMIT 等自然词可）。 |
 | **Induction / 成员装配**（v1.5.0，用户 2026-09-07 拍板命名） | **系统提示注入机制的统称**（原"核心 loop 注入"）：把新实例（新会话 / rebuild 重建 / 新 agent）引入为轨迹成员的装配机制——启动时注入 8 块五层骨架文本（A 主体定义 / B 质量规范 / C 状态调节 / D 工作供给 / E 任务指示，稳定→易变装配序），使新实例获得完整主体认知从而"注册"为轨迹成员（§5）。本质 = 成员资格重建协议的可注入面（CCE R↓ 文本实现：载体可换、注册不变）；Metaphor 为装配于主体定义层的渲染块（世界模型记忆钩，不计入 8 块内容骨架；dsp 实际装配 9 物理块）。 |
+| **轨迹 skill 声明**（v1.6.1） | 轨迹在**自身持久身体**（`SESSION.md` 顶部 YAML frontmatter）的 `skills:` 键里声明要挂哪些 skill；ACC 在**绑定期间**把这些 skill 的 `SKILL.md` 全文注入系统提示（§5.12）。取代 **SEP**（脚本钩子管道，dsp v1.34.1 废除）。 |
 
 ---
 
@@ -232,9 +233,9 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 |------|------------|------|
 | `container_fs` | root/resolve/exists/list/tree/relative/mkdir/rm/mv/cp/touch/append/reveal/info/find（15 子命令），路径逃逸阻断 | 原 cc_fs |
 | `container_git` | status/commit/push/log/pull/diff；非快进建议；冲突走外部 | 原 cc_git |
-| `container_trajectory` | **6 动作（v1.33 合并后）**：`list`（轨迹清单 + 统计 + 异常标注）/ `show` / `create` / `use`（激活；**内联三项完整性检查**——存在性 / 空壳 / 长期无活动，通过则静默、不通过则提示）/ `rebuild`（原地清空重建 = Ship of Theseus）/ **`wake-later`**（= 原 wake-add：「未来时刻 + 一条 message」，可唤醒任一轨迹；fire-and-forget——**无回执、不可回收**）；AGENT_SESSIONS/ 全周期，S### 自动分配 | 原 session + session_rebuild（v1.30 名 `logbook` → v1.33 名 `trajectory` → **v1.34 本名**）。**已淘汰**：`close` / `archive`（归档改走 `container_fs mv`）/ `health`·`qa`·`summary`（并入 `use`·`list`）/ `hook-develop-guide`（并入 `container_admin msm guide` 的 SEP 章节）/ `wake-list`·`wake-rm` |
+| `container_trajectory` | **6 动作（v1.33 合并后）**：`list`（轨迹清单 + 统计 + 异常标注）/ `show` / `create` / `use`（激活；**内联三项完整性检查**——存在性 / 空壳 / 长期无活动，通过则静默、不通过则提示）/ `rebuild`（原地清空重建 = Ship of Theseus）/ **`wake-later`**（= 原 wake-add：「未来时刻 + 一条 message」，可唤醒任一轨迹；fire-and-forget——**无回执、不可回收**）；AGENT_SESSIONS/ 全周期，S### 自动分配 | 原 session + session_rebuild（v1.30 名 `logbook` → v1.33 名 `trajectory` → **v1.34 本名**）。**已淘汰**：`close` / `archive`（归档改走 `container_fs mv`）/ `health`·`qa`·`summary`（并入 `use`·`list`）/ `hook-develop-guide`（并入 `container_admin msm guide`；**其中承载的 SEP 章节已随 SEP 废除删除**，见 §5.12）/ `wake-list`·`wake-rm` |
 | `msm` | **单入口执行+发现**：`msm(name, args)` 直接执行；name 未命中 → 模糊候选；`inspect=true` 查用法；无参 → 分类目录；mech-registry.json 单级聚合档；path 逃逸校验；600s 超时 | 原 acc_msm 执行面；管理面归 container_admin |
-| `container_admin` | **机务舱**：role（Skiff 角色 guide/validate/apply/list）/ msm（register/deregister/check/guide/catalog/ccc-config；dev 手册含 SEP 章节）/ config（CCC 配置读改）/ **autopilot（status/init/generate-bias——周期自唤醒 D59）** | 原 skiff_admin + acc_msm 管理面 + CCC 配置 + **Autopilot（v1.33 起由独立工具 `autopilot-trajectory` 并入；脚本历史动作名 all/init/random）** |
+| `container_admin` | **机务舱**：role（Skiff 角色 guide/validate/apply/list）/ msm（register/deregister/check/guide/catalog/ccc-config）/ config（CCC 配置读改）/ **autopilot（status/init/generate-bias——周期自唤醒 D59）** | 原 skiff_admin + acc_msm 管理面 + CCC 配置 + **Autopilot（v1.33 起由独立工具 `autopilot-trajectory` 并入；脚本历史动作名 all/init/random）**；**报告与唤起判据同源**——`status`/`init` 直调唤起判据，不自判一份（v1.6.1；脚本时代"报告一份判据、执行一份判据"导致的逐条件分歧由此消除） |
 | `dashboard` | health（P1/P2/配置三原则 + MSM registry 完整性）/ time / wait | 原 acc_kit |
 | `praxis` | 可实践理论注入：praxis（索引）/ praxis eap / praxis neat / praxis cce | 原 eap + neat + cce 三合一 |
 | `handyman` | **双模式（v1.5.4 / dsp v1.31.3）**：`mode="foreground"`（缺省）= 一次前台串行委派（宿主委派服务 + 子 agent 模型经 `agentOptions` 注入，返回最终文本，不循环/不校验完成码/不写进度文件）；`mode="background"` = 白名单模型 worker 循环执行（stop token 唯一完成判据）+ jobs=[] 并行编排 + 进度文件续跑；两模式共用 CCC 模型白名单 | 原 loop（v1.24.0 重构；v1.31.3 加模式维度） |
@@ -255,7 +256,9 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 `autopilotEnabled`，用 `??` 保证新键显式 `false` 能覆盖旧键 `true`）｜一次性唤醒调度器 `wakeSchedulerEnabled`
 （**缺省开**，**无**回退键）。**根因**（旧实现缺陷）：共用一闸（`trajectoryEnabled || autopilotEnabled`）⇒ 所有者
 关掉周期自唤醒后，`wake-later` 条目**一并静默滞留**。两闸分属两条线，均**不改变工具契约本身**（工具仍在，
-只是到点不投递）。
+只是到点不投递）。两闸均**按每次求值读取当前配置**——从关到开**无需重启宿主**即生效（v1.6.1 补记：唤醒
+**事件接线不得挂在某一刻的闸值之后**；dsp v1.34.1 修一处"接线位于闸判定之后 ⇒ 闸缺省关时事件永不挂上、
+面板开闸后不重启不生效"的缺陷）。
 
 ### 4.2 非必需（平台原生优先）
 
@@ -351,6 +354,8 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | 9 | E | Session | `=== Serenity Session ===` | 同上 |
 
 **装配序深层逻辑**：A→B 声明跨会话不变的成员资格（身份先行——v1.28.0 ③ 工具清单独立块移末尾，身份不被清单干扰）；C 按进程内状态条件调节（无对应状态整块省略）；D→E 供给本 CCC 的知识/能力并指示本轮任务（工具参考殿后、需要时再看，最具体的操作指示最后出现）。从稳定到易变 = 从成员身份到本轮任务：越早读到越通用的成员声明，越晚读到越具体的工作供给。
+
+**条件供给段（不计入骨架）**：固定 9 块之外，另有**按数据条件出现**的追加供给——**D 层的轨迹 skill 供给**（§5.12：仅当该轨迹在其 `SESSION.md` frontmatter 声明 `skills:` 时出现）**不计入 8 块骨架**，也不改变上述固定装配序（与 §5.6 的状态块同族：条件成立才出现的段落）。
 
 **幂等规则**：通过标记头检测（`output.system.some(s => s.includes(marker))`），同一会话不重复注入。压缩（compact）后必须重注入（保留 ACC 身份，模型不丢失 CCC 约束）。
 
@@ -581,14 +586,13 @@ blacklisted paths or governance files.
 ### 5.7 块 7：SKILL 全文（入口技能）
 
 ```
-# CCC 入口技能：<skill-name>（来源: <source>）
-
 <SKILL.md 全量原文>
 ```
 
-- 内容 = §3.2 发现的入口技能全文，**不截断**
+- 内容 = §3.2 发现的入口技能全文，**不截断**；**原文直推、无包裹头**——注入文本就是 `SKILL.md` 全文本身，宿主**不另加** `# CCC 入口技能：<skill-name>（来源: <source>）` 一类抬头（来源信息由 §3.2 的发现机制承载，重复进提示词＝多一处会漂移的真相；v1.6.1 按 dsp 实现改正）
 - 可过滤对 agent 隐藏的治理内容（如 safe-mode 机制——安全模式是用户能力，不对 agent 提及）
-- 多入口技能以 `---` 分隔
+- 多入口技能以**空行**分隔（v1.6.1 按 dsp 实现改正；原记「以 `---` 分隔」是把 `SKILL.md` 自身 frontmatter 的定界符 `---` 误认作块间分隔符）
+- 本块是 **CCC 级**供给（入口技能，恒在）；**轨迹级**的额外 skill 供给见 §5.12
 
 ### 5.8 块 8：Tools（v1.4，dsp v1.28.0 ③ 工具清单独立成块殿后；v1.6.0 工具名同步 dsp v1.34）
 
@@ -604,7 +608,7 @@ The ACC (this plugin) provides the following built-in tools:
   praxis       — actionable theory injection: praxis (index) / praxis eap / praxis neat / praxis cce
   handyman     — delegate work to a worker agent on a CCC-whitelisted model; mode="foreground" (default) = one serial child returns its final text; mode="background" = loop-validated worker (completion code + round cap + restart + progress file), jobs=[] orchestrates parallel work
   localstore   — ACC local credential/config storage (CCC-root localstore.json; git policy localstore.gitTrack default deny)
-  container_admin — container administration (the maintenance bay): role (Skiff roles: guide/validate/apply/list) / msm (register/deregister/check/guide/catalog/ccc-config — the dev manual also carries the session-extension protocol) / config (view) / autopilot (status/init/generate-bias — periodic self-wake)
+  container_admin — container administration (the maintenance bay): role (Skiff roles: guide/validate/apply/list) / msm (register/deregister/check/guide/catalog/ccc-config) / config (view) / autopilot (status/init/generate-bias — periodic self-wake)
 
 MSM call (registered CCC MSMs, deterministic Mech & Semi-Mech):
   Execute:       msm("<name>", ["<arg1>", "<arg2>"])   — run a registered MSM directly (partial name returns matching candidates)
@@ -686,6 +690,56 @@ never reuse a prior code.
 - **rebuild 交接协议（v1.5.2，dsp v1.31.1）**：**写侧** = rebuild 提醒（LIMIT）要求把手头 in-flight 事项（卡在哪一步 / 尚未完成什么 / 下一步动作）写在 SESSION.md **最末尾**的固定英文标题 `## In-flight (rebuild handover)` 之下；**读侧** = 重建锚点要求读该区块并逐项处理（区块缺失 → 从最新进度条目推断）。两侧引用**同一标题常量**（单一真相源——标题漂移则读侧找不到写侧写的区块）。读侧取"软指令"而非机械摘取（机械摘取会把区块内容复制进锚点 = 第二真相源）
 - ACK 码（{code}）3 位随机（字母+数字）；ACK 后积分清零；持续注入直至收到正确 code
 - **改名兼容（v1.3.1 steward / v1.4 assistant）**：旧前缀 `[SESSION-KEEPER]` → `[TRAJECTORY-STEWARD]`（v1.3.1）→ `[TRAJECTORY-ASSISTANT · CHECKPOINT]`（v1.4，并入 assistant 体系）；ACK 码单次使用、不跨会话持久化，改名对既有会话零影响；机制名内部标识可保留，对外文本前缀必须一致
+
+---
+
+### 5.12 轨迹声明的 skill 供给（v1.6.1 新增；dsp v1.34.1 废除 SEP 后的替代机制）
+
+> **与 Induction 的关系**：本机制是 §5.0 **D 工作供给层**里按**轨迹数据**条件的追加供给——除 §5.7 的入口技能（CCC 级、恒在）外，**轨迹**可在自己的持久身体上声明额外要挂的 skill，ACC 在**绑定期间**把它们的 `SKILL.md` 全文一并供给。**不计入 8 块骨架**，不改变固定装配序（与 §5.6 状态块同族：条件成立才出现的段落）。
+
+**为什么废除旧机制（判据）**：旧机制 **SEP（Session Extension Protocol）** = `ACC 定义协议 → CCC 写脚本 → ACC 在生命周期点 spawn 脚本`。所有者判据「**能落 harness 已有原语，就不要自造协议 + 脚本管道**」⇒ 改用**宿主已有的装配原语**（系统提示 section）+ **已有的 `SESSION.md` 文件**替代整条脚本链，不新造协议。**连带作废**：dsp v1.33 曾裁「SEP 内容并进 `container_admin msm guide`」——该裁决的**前提已消失**（对象不存在）⇒ `msm guide` 的 SEP 章节随之删除；这不是推翻那条裁决。
+
+#### 数据契约（CCC 侧；任何实现必须支持）
+
+| 规则 | 内容 |
+|---|---|
+| **位置** | 轨迹的 `SESSION.md` **最顶部** YAML frontmatter；**唯一真相源**（不在别处重复声明） |
+| **定界** | 第一行必须是 `---`，到下一行 `---` 为止；首行非 `---` / 未闭合 ⇒ **视为无 frontmatter**（半截声明块按格式错误处理，不猜意图） |
+| **键** | 只认 `skills:`；**未知键一律忽略**（向前兼容，不报错——其他键归 CCC 自由使用，ACC 视而不见） |
+| **值形态** | ① 行内数组 `skills: [home-rhetoric, acc-eap]`｜② 缩进列表（`skills:` 后各起一行 `  - a`）。**只认这两种**；其余形态（如裸标量 `skills: a`）视为无声明 |
+| **名字** | 去首尾空白、空项丢弃、**保持书写顺序**（注入顺序 = 书写顺序）、同名去重（保留首次位置） |
+| **缺省** | 无 frontmatter / 无 `skills` 键 / 值为空 ⇒ **不注入任何东西**（零配置面：不报错、不产生空块） |
+| **只读** | ACC **不改写** frontmatter |
+
+```markdown
+---
+skills: [home-rhetoric, acc-eap]
+---
+
+# SESSION: …
+```
+
+#### 注入契约（语义强制；形态由实现自定）
+
+| 项 | 要求 |
+|---|---|
+| **触发** | 该会话**存在轨迹绑定**（§4.1 `container_trajectory use`）**且该轨迹有非空声明**；否则**完全不注册该段**（不产生空块、不产生噪声） |
+| **生命周期** | **绑定期间持续存在**——不因对话压缩而消失 ⇒ 取「每次装配重新求值」的形态，**不是**一次性注入 |
+| **内容** | 所列 skill 的 `SKILL.md` **全文**，按声明顺序拼接，每段带来源抬头 `=== skill: <name> ===` |
+| **缺失** | 拿不到全文（skill 不存在 / 读失败 / 该轨迹的 `SESSION.md` 不存在）⇒ **响亮提示**（`[缺失] <name>（未找到该 skill）`），**绝不静默** |
+| **🔒 名字安全** | 名字来自 **CCC 数据** ⇒ **必须先过名字安全校验**（拒绝 `../` 一类穿越形态）**才可用于拼路径**；不安全 ⇒ 按缺失处理，且**不得发生任何以该名拼出的文件访问** |
+| **长度守卫** | 必须有**总长上限**（dsp 缺省 32 KB），超限截断并明示——防上下文爆炸 |
+| **查找** | 名字 → `SKILL.md` 的解析与 §3.2 的 skill 发现同源（dsp：`.dsh/skills` 优先 → `.opencode/skills`） |
+
+**实现自由面**（不属契约）：宿主装配原语的选择（dsp = per-agent `systemPrompt.section`）/ 总长上限的具体取值 / 解析器实现（dsp 为最小实现，不引 YAML 依赖）。
+
+#### 维护护栏（compaction 风险）
+
+`SESSION.md` 在体积超限（§5.11 `· LOGBOOK COMPACTION`）时会被 agent **整体重写** ⇒ frontmatter 可能被抹掉、声明随之**静默消失**。⇒ §5.11 的两条 compaction 提醒文案**必须**含「**保留文件顶部的 YAML frontmatter 原样**」一句——把风险点从"纯纪律依赖"改为"在唯一会发生重写的时刻提示"。**残余风险（诚实边界）**：护栏是**文案级**，非机械强制；升级方向 = compaction 后校验 frontmatter 存在性并对缺失响亮提示。
+
+#### 接口真相源
+
+数据契约 / 注入契约 / **9 条验收清单**的逐字规格见 dsp 仓 `docs/trajectory-skill-injection.md` v1.0——**本仓不复制该文**（复制＝第二真相源）；本节 = 标准层的规范语义，**逐字解析规则与验收清单以该文为准**。实现位置（dsp v1.34.1）：`src/trajectory-skills.ts`（解析 + 装配 + 安全判定）+ `src/seams/system-prompt.ts` 的 `registerTrajectorySkillSection`（宿主接入与注册门）。
 
 ---
 
@@ -782,7 +836,8 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ## 11. 标准演化
 
-- **版本**：v1.6.0（2026-09-15，工具契约名同步 dsp v1.34）
+- **版本**：v1.6.1（2026-09-15，dsp **v1.34.1 代码态**对齐——§5.12 新增 + SEP 废除收尾）
+- **v1.6.1 新增/确认（S142，dsp v1.34.1 代码态对齐）**：① **§5.12 新增「轨迹声明的 skill 供给」**——轨迹在其 `SESSION.md` 顶部 frontmatter 用 `skills:` 声明要挂的 skill，ACC 在**绑定期间**把各 `SKILL.md` 全文注入（数据契约 + 注入语义入标准；**逐字解析规则与 9 条验收清单引用 dsp 接口真相源 `docs/trajectory-skill-injection.md`，不复制**）——这是 **SEP 废除后的替代机制**（判据：**能落 harness 已有原语，就不要自造协议 + 脚本管道**）；② **SEP 的现行时引用清除**（§4.1 `container_trajectory` 淘汰清单 + §4.1 `container_admin` 的 `msm` 域——`msm guide` 的 SEP 章节已随 SEP 废除删除）；③ **§5.8 toolsBlock 镜像行逐字回同步**（`container_admin` 行删去一处**指向已废机制**的提示词分句——实现侧已在 `c541bd1` 删除，specs 逐字镜像故同删；该分句的逐字文本见 CHANGELOG v1.6.1，本处不复述以免正文出现废机制词）；④ **§5.7 入口 SKILL 注入形态按实现改正**（**原文直推、无包裹头**；多入口以**空行**分隔——原记的"抬头模板"与"`---` 分隔"均与实现不符）；⑤ **§4.1 两条契约级补记**（`container_admin autopilot` 的**报告与唤起判据同源**，不自判一份；两闸**按每次求值读取**、从关到开**无需重启宿主**即生效）；⑥ `experiments/autopilot-trajectory/` 改为**纯文档目录**（可执行脚本退场，退出 npm 分发面）
 - **v1.6.0 新增/确认（S142，dsp v1.34 对齐）**：**§4 工具契约名同步**——① `trajectory` → **`container_trajectory`**（硬切无别名；**准确性调整**非美学偏好：trajectory 机制由 ACC 提供、运行在容器内，一等公民地位不变；specs 侧一并改正 v1.30 旧名 `logbook`），动作面收敛为 **6 个**（list/show/create/use/rebuild/wake-later；`use` 内联三项完整性检查；`close`/`archive`/`health`/`qa`/`summary`/`hook-develop-guide`/`wake-list`/`wake-rm` 已淘汰）；② **autopilot 面归 `container_admin` 机务舱**（`status`/`init`/`generate-bias`，脚本历史动作名 all/init/random）——`autopilot-trajectory` **不再是独立契约工具**（§4.1 行删并、§4.4 映射改写）；③ **新增专属工具 `acc-diag`**（§4.2；默认对所有 CCC 隐藏，判据 = CCC `exclusiveTools` 逐字声明——复用条件可见机制/`tools.restrict` 工具级 deny 从 schema 移除）；④ **两个独立全局闸**解耦入标准（`wakeSchedulerEnabled` 缺省开 / `autopilotWakeEnabled` 缺省关 + 迁移期 `??` 回退旧键 `autopilotEnabled`；取代"共用一闸"）；⑤ **命名判据入 §4**（`container_<X>` = 掌管本容器自身之 X；前缀表作用域不表平级）；⑥ §5 提示词文本同步（§5.3 `container_trajectory rebuild`；§5.2 Metaphor 第 6/7 条 `The Ship's Log` 措辞；§5.8 toolsBlock 9 行含 `container_admin` 的 autopilot 域 + 条件可见工具不列行说明）；⑦ `experiments/autopilot-trajectory/` 与 dsp 现行版逐文件一致（脚本头注/提示文案 `container_admin autopilot status|init|generate-bias`、`trajectory.autopilot` 回退链与 init 写新键删旧键）；⑧ 附录 A dsp 列 → v1.34
 - **v1.5.4 变更（S142，dsp v1.31.3 对齐）**：**`handyman` 双模式**——`mode="foreground"`（**缺省**）= 一次前台串行委派（宿主委派服务 `subagents.start` + 子 agent 模型经 `agentOptions` 注入；返回最终文本；不循环/不校验完成码/不写进度文件）；`mode="background"` = 既有循环校验实现（stop token 唯一完成判据 + 轮次上限 + 自动重启 + 进度文件 + jobs 并行）；**两模式共用 CCC 模型白名单**（零新增配置）。依据 = 用户裁决「dsh 有配置但没放开估计是有原因的，我们要在 ACC 层去自动实现」「只要有个 subagent 机制可以使用低成本模型就好」「名字上我们都叫 handyman，分为 background 和非 background 两种」。§4.1 行 + §5.8 toolsBlock 示例同步
 - **v1.5.3 变更（S142，dsp v1.31.2 对齐）**：**`sessionKeeper.sessionMdMaxKB` 缺省值 100 → 200 KB**（§3.1 示例 + §5.11 条目同步）——依据 = 用户"SESSION.md的默认阈值设定在200kb吧"；理由 = 100 KB 对长期维护会话偏紧（每轮催 = 提醒疲劳，而重写是大工程），200 KB 仍挡住无界增长；**显式配置（含 0）不受影响**（CCC 级配置始终优先）
@@ -801,7 +856,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 ## 附录 A：与 osp/dsp 实现的一致性核对矩阵
 
-| 标准条款 | osp（opencode-serenity-plugin v0.8.5，**待按 v1.4~v1.6 spec 同步**） | dsp（dsh-serenity-hooks **v1.34**，**领先实现**；specs 对齐基线 v1.34） | 核对 |
+| 标准条款 | osp（opencode-serenity-plugin v0.8.5，**待按 v1.4~v1.6 spec 同步**） | dsp（dsh-serenity-hooks **v1.34**，代码态 **v1.34.1**，**领先实现**；specs 对齐基线 v1.34 + v1.34.1 代码态） | 核对 |
 |---------|--------------------------------------------------------------|----------------------------------------------|------|
 | §3 CCC 结构 | .serenity/AGENT_SESSIONS/docs/.opencode/skills/mech-registry.json | 同 + .dsh/ 并存；mech-registry 单级聚合于 `.opencode/skills/<ccc-name>/references/` | ⚠️ osp 待同步（注册表位置） |
 | §3.1 配置 | `.opencode/serenity.json`（handyman/sessionKeeper/safeMode） | `.dsh/serenity.json` 回退 `.opencode/serenity.json`（v1.19.5 起无 bootstrap 段——first-anchor 零配置） | ✅ |
@@ -814,17 +869,18 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 | §5.4 CCE 块 | compacting.ts cceBlock（待删 CCE AND EAP 段） | system-prompt.ts cceBlock（v1.19.6 删段，逐字固定） | ⚠️ osp 待同步 |
 | §5.5 EAP | **无（dsp 扩展）** | system-prompt.ts eapBlock（全英，v1.23） | ✅（dsp 扩展） |
 | §5.6 状态块 | safe-mode 机制待对齐语义→机制→约束 | system-prompt.ts safeModeBlock / localstoreBlock（全英） | ⚠️ osp 待对齐 |
-| §5.7 SKILL 全文 | compacting.ts 注入 state.skillContent | system-prompt.ts entrySkillSectionText（sanitize 治理内容） | ✅ |
+| §5.7 SKILL 全文 | compacting.ts 注入 state.skillContent | system-prompt.ts entrySkillSectionText（sanitize 治理内容；**原文直推无包裹头**、多入口**空行**分隔——v1.6.1 按代码改正） | ✅ |
 | §5.8 Tools | **无（待新增独立 toolsBlock）** | system-prompt.ts toolsBlock（9 行 + msm 单入口 4 行协议，v1.28.0 ③；v1.34 工具名同步——条件可见工具不列行） | ⚠️ osp 待新增 |
 | §5.9 Session | compacting.ts sessionBlock（内存活跃会话） | system-prompt.ts sessionBlock（serenity/bound 会话事件 + 标题恢复链；trajectory-assistant 预声明） | ✅（文本一致，机制差异） |
 | §5.10 注入时机 | system.transform / messages.transform / session.compacting | session-start / prompt-submit / systemPrompt.section（全局 + scoped）/ compact | ✅ |
 | §5.11 assistant | session-keeper.ts（150 阈值，3 位码） | trajectory-assistant.ts（token 单一真相源 + keeper.ts post-execute DCP） | ⚠️ osp 待改名同步 |
+| §5.12 轨迹 skill 供给 | **无（待新增）** | system-prompt.ts `registerTrajectorySkillSection` + `trajectory-skills.ts`（v1.34.1：frontmatter `skills:` → 绑定期间全文注入；缺失响亮提示 + 名字安全 + 32 KB 守卫） | ⚠️ osp 待新增 |
 | §6 S1-S7 | 6 hooks | 8 seams + 输出守卫（仅外部面） | ✅（dsp 增强） |
 | §7 激活 | 双阶段 + P1/P2/P3 | P1/P2/P3 + Phase2 简化 | ✅ |
 | §8 skill 格式 | 原生（.opencode/skills） | opencode-skills provider（rank 250）+ acc-* 模板分发 | ✅（dsp 兼容层） |
 | §10 错误类 | 13 类 | 13 类（同） | ✅ |
 
-**核对结论（v1.6.0）**：**dsp 是领先实现**——其实际装配文本即 Induction 骨架的实证来源（10 工具 v1.30 体系 / 五层装配含 Metaphor 渲染层 / trajectory-assistant token / registry 保护与健康检查），发布 v1.30.1（62 files / 895 tests 全绿实证；后续 v1.30.2~4 为守卫修复与 skiff 绑定等 CCC 扩展）；specs 自 v1.2 起跟随 dsp 领先实现。**osp 侧待按本 spec 同步**（§3 registry 位置 / §4 工具改名 / §5.1/5.2/5.3/5.4/5.6/5.8/5.11——见 S142 待办 #6 + §8 用户拍板）；**pi-serenity-plugin 按本标准（v1.6.0 工具契约名）实现即可三端对齐**。v1.3.0 新增 §0 理论根基；v1.3.1 Session=载体定义升级；v1.4.0 工具契约名 v1.30 体系 + 注入 9 块；v1.5.0 提示词机制命名 Induction（§5 骨架化——语义文本与 v1.4.0 相同，仅命名与结构叙述更新；dsp/osp 实现侧术语对齐（system-prompt.ts 注释/维护 skill 逐步改用 Induction 提法）为后续项）；**v1.6.0 工具契约名同步 dsp v1.34**（`container_trajectory` + autopilot 归 `container_admin` + 专属工具 `acc-diag` + 两个全局闸解耦 + 命名判据）——**osp 侧工具面将随之对齐**（标准侧已改；`logbook` → `container_trajectory`；§4.1 最小公共集 = 9 工具（autopilot 归 `container_admin`）；§4.2 的 im-bridge / acc-diag 为可选实现，osp 实现**待跟**）。
+**核对结论（v1.6.1）**：**dsp 是领先实现**——其实际装配文本即 Induction 骨架的实证来源（10 工具 v1.30 体系 / 五层装配含 Metaphor 渲染层 / trajectory-assistant token / registry 保护与健康检查），发布 v1.30.1（62 files / 895 tests 全绿实证；后续 v1.30.2~4 为守卫修复与 skiff 绑定等 CCC 扩展）；specs 自 v1.2 起跟随 dsp 领先实现。**osp 侧待按本 spec 同步**（§3 registry 位置 / §4 工具改名 / §5.1/5.2/5.3/5.4/5.6/5.8/5.11/**5.12**——见 S142 待办 #6 + §8 用户拍板）；**pi-serenity-plugin 按本标准（v1.6.1 工具契约名 + §5.12）实现即可三端对齐**。v1.3.0 新增 §0 理论根基；v1.3.1 Session=载体定义升级；v1.4.0 工具契约名 v1.30 体系 + 注入 9 块；v1.5.0 提示词机制命名 Induction（§5 骨架化——语义文本与 v1.4.0 相同，仅命名与结构叙述更新；dsp/osp 实现侧术语对齐（system-prompt.ts 注释/维护 skill 逐步改用 Induction 提法）为后续项）；**v1.6.0 工具契约名同步 dsp v1.34**（`container_trajectory` + autopilot 归 `container_admin` + 专属工具 `acc-diag` + 两个全局闸解耦 + 命名判据）——**osp 侧工具面将随之对齐**（标准侧已改；`logbook` → `container_trajectory`；§4.1 最小公共集 = 9 工具（autopilot 归 `container_admin`）；§4.2 的 im-bridge / acc-diag 为可选实现，osp 实现**待跟**）。**v1.6.1**：SEP 废除（替代机制 = §5.12 轨迹 skill 供给）+ §5.8 镜像行逐字回同步 + §5.7 注入形态按实现改正 + §4.1 两条契约级补记（报告与判据同源 / 两闸每次求值读取）——⚠️ **dsp 侧为代码态 v1.34.1，尚未发布/部署**（运行态仍 v1.34.0；发布待所有者令）。
 
 ---
 
