@@ -1,6 +1,6 @@
-# Serenity-ACC 认知容器标准（Specs v1.6.1）
+# Serenity-ACC 认知容器标准（Specs v1.7.0）
 
-> **状态**：v1.6.1（2026-09-15，与 **dsp v1.34.1 代码态**对齐——① **§5.12 新增「轨迹声明的 skill 供给」**（轨迹在其 `SESSION.md` frontmatter 用 `skills:` 声明要挂的 skill，ACC 在**绑定期间**注入各 `SKILL.md` 全文——**SEP 废除后的替代机制**）＋ ② **SEP 废除的文档收尾**（§4.1 两处现行时引用清除；§5.8 toolsBlock 镜像行**逐字**回同步）＋ ③ **§5.7 注入形态按实现改正**（原文直推无包裹头 / 多入口空行分隔）＋ ④ **§4.1 两条契约级补记**（autopilot 的**报告与判据同源** / 两闸**每次求值读取**、从关到开无需重启））——承接 v1.6.0（2026-09-15，与 **dsp v1.34** 对齐——工具契约名同步：`trajectory` → **`container_trajectory`**（硬切无别名）＋ autopilot 面归 **`container_admin`** 机务舱（不再列独立工具）＋ 专属工具 **`acc-diag`**（条件可见家族）＋ **两个独立全局闸**解耦（`wakeSchedulerEnabled` 缺省开 / `autopilotWakeEnabled` 缺省关）＋ **命名判据**（`container_<X>` = 掌管本容器自身之 X）写入 §4）+ v1.5.4（`handyman` 双模式：foreground 缺省 = 一次前台串行委派 / background = 循环校验）+ v1.5.3（`sessionMdMaxKB` 缺省 100 → 200 KB）+ v1.5.2（§5.11 新增 token `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒）+ rebuild 交接协议（in-flight 区块，写侧/读侧同源标题）+ §3.1 补 `sessionKeeper.sessionMdMaxKB`）+ v1.5.1（§4.2 `im-bridge` + 条件可见机制）+ v1.5.0（提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层））+ v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
+> **状态**：v1.7.0（2026-09-17，与 **dsp v1.39.0** 对齐——**本轮四批**：① **§4 工具契约面去 `autopilot` 域**（`container_admin` 行 + 映射表 + 闸收敛，对齐 dsp **v1.35.0** 的"ACC 侧 autopilot 整段退场"）② **§4.1 两个投递动作更名**（`wake-later` → `send-later`、`send-message` → `send-now`，**硬切无别名**）③ **§4.1 补队列语义**（一边界一条 + FIFO 顺延，真机实测）④ **§5.8 toolsBlock 镜像行逐字回同步**；同批清理 `experiments/autopilot-trajectory/`。**以下为 v1.6.1 的历史叙述**：v1.6.1（2026-09-15，与 **dsp v1.34.1 代码态**对齐——① **§5.12 新增「轨迹声明的 skill 供给」**（轨迹在其 `SESSION.md` frontmatter 用 `skills:` 声明要挂的 skill，ACC 在**绑定期间**注入各 `SKILL.md` 全文——**SEP 废除后的替代机制**）＋ ② **SEP 废除的文档收尾**（§4.1 两处现行时引用清除；§5.8 toolsBlock 镜像行**逐字**回同步）＋ ③ **§5.7 注入形态按实现改正**（原文直推无包裹头 / 多入口空行分隔）＋ ④ **§4.1 两条契约级补记**（autopilot 的**报告与判据同源** / 两闸**每次求值读取**、从关到开无需重启））——承接 v1.6.0（2026-09-15，与 **dsp v1.34** 对齐——工具契约名同步：`trajectory` → **`container_trajectory`**（硬切无别名）＋ autopilot 面归 **`container_admin`** 机务舱（不再列独立工具）＋ 专属工具 **`acc-diag`**（条件可见家族）＋ **两个独立全局闸**解耦（`wakeSchedulerEnabled` 缺省开 / `autopilotWakeEnabled` 缺省关）＋ **命名判据**（`container_<X>` = 掌管本容器自身之 X）写入 §4）+ v1.5.4（`handyman` 双模式：foreground 缺省 = 一次前台串行委派 / background = 循环校验）+ v1.5.3（`sessionMdMaxKB` 缺省 100 → 200 KB）+ v1.5.2（§5.11 新增 token `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒）+ rebuild 交接协议（in-flight 区块，写侧/读侧同源标题）+ §3.1 补 `sessionKeeper.sessionMdMaxKB`）+ v1.5.1（§4.2 `im-bridge` + 条件可见机制）+ v1.5.0（提示词机制命名 **Induction**（成员装配，§5 骨架化 8 块五层））+ v1.4.0（工具契约名 v1.30 体系 / 注入 9 块 / 星舰 Metaphor / trajectory-assistant 关卡化 token / registry 写保护与健康检查）+ v1.3.x 理论根基 + 术语对齐）
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以和任何现存 CCC 良好工作——**任何一方都无需修改**。
 > **实现对照**：本标准的语义基线来自两个已投产实现——opencode-serenity-plugin（osp，opencode 运行时）与 dsh-serenity-plugin（dsp，DeepSeek Harness 运行时）。v1.2 起 **dsp 领先**（v1.19.9 → **v1.34**，代码态 **v1.34.1**），specs 跟随 dsp 领先实现（§4 工具契约名 v1.4.0 起用 dsp 新名，v1.6.0 同步至 dsp v1.34、v1.6.1 同步至 dsp v1.34.1 代码态；v1.5.0 提示词机制命名 Induction；v1.5.2 trajectory-assistant 两项增强）；**osp/pi 按本 spec 待同步**（见附录 A）。pi-serenity-plugin（Pi 运行时）按本标准立项开发。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
@@ -160,7 +160,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | **会话 / Session**（v1.3.1） | **Trajectory 的可重建载体**。宁静号的 session（AGENT_SESSIONS/S### + SESSION.md）承载 trajectory 的存在：SESSION.md 是轨迹的持久身体（存储形态），工作会话是轨迹的运行副本（再发生形态）。载体可丢弃/重建（`container_trajectory rebuild`，即原 session_rebuild 语义），轨迹通过载体的重建延续（Ship of Theseus）。同义视角：session 与 trajectory 指同一认知存在的两个面——连续体（trajectory）与其承载实例（session）。 |
 | **认知 Loop**（v1.3） | 认知发生的基本单位。Loop 中的一切外部交互（工具/等待用户/系统事件）都是反馈；动作与反馈同质（§0.2）。 |
 | **认知介质**（v1.3） | LLM / Runtime / Tools。产生下一步认知与行动的介质，可替换，不属于轨迹本体（§0.3）。 |
-| **trajectory-assistant**（v1.4，dsp v1.29 定名） | 过程性动态提示注入机制的统称（Trajectory Steward 计分督促 + 重建提醒 + 输出守卫打回 + Autopilot 唤起）。关卡化设计：token 常量单一真相源 + 风格 facade；**关卡思想限结构与时机，提示词用词禁游戏黑话**（CHECKPOINT/LIMIT 等自然词可）。 |
+| **trajectory-assistant**（v1.4，dsp v1.29 定名） | 过程性动态提示注入机制的统称（Trajectory Steward 计分督促 + 重建提醒 + 输出守卫打回 + ~~Autopilot 唤起~~——🔴 **v1.7.0：Autopilot 唤起已于 dsp v1.35.0 退场**）。关卡化设计：token 常量单一真相源 + 风格 facade；**关卡思想限结构与时机，提示词用词禁游戏黑话**（CHECKPOINT/LIMIT 等自然词可）。 |
 | **Induction / 成员装配**（v1.5.0，用户 2026-09-07 拍板命名） | **系统提示注入机制的统称**（原"核心 loop 注入"）：把新实例（新会话 / rebuild 重建 / 新 agent）引入为轨迹成员的装配机制——启动时注入 8 块五层骨架文本（A 主体定义 / B 质量规范 / C 状态调节 / D 工作供给 / E 任务指示，稳定→易变装配序），使新实例获得完整主体认知从而"注册"为轨迹成员（§5）。本质 = 成员资格重建协议的可注入面（CCE R↓ 文本实现：载体可换、注册不变）；Metaphor 为装配于主体定义层的渲染块（世界模型记忆钩，不计入 8 块内容骨架；dsp 实际装配 9 物理块）。 |
 | **轨迹 skill 声明**（v1.6.1） | 轨迹在**自身持久身体**（`SESSION.md` 顶部 YAML frontmatter）的 `skills:` 键里声明要挂哪些 skill；ACC 在**绑定期间**把这些 skill 的 `SKILL.md` 全文注入系统提示（§5.12）。取代 **SEP**（脚本钩子管道，dsp v1.34.1 废除）。 |
 
@@ -223,7 +223,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 >
 > **命名判据（v1.6.0 入标准，用户 2026-09-15 裁决；出处 `docs/acc-story.md` §11.2「命名继承背景：cc_xx → container_xx」）**：
 > **`container_<X>` = 掌管本容器自身之 X 的工具**（`container_fs` / `container_git` / `container_trajectory` / `container_admin`）。
-> 前缀 `container` 表**作用域（在本容器内）**，**不表**"与容器平级"——trajectory 机制由 ACC 提供、运行在容器内，**尽管是一等公民**（D58：trajectory 是本体，autopilot 是其周期特例），其工具名仍带容器前缀。
+> 前缀 `container` 表**作用域（在本容器内）**，**不表**"与容器平级"——trajectory 机制由 ACC 提供、运行在容器内，**尽管是一等公民**（D58：trajectory 是本体，autopilot 是其周期特例——🔴 后者已于 dsp v1.35.0 退场，该特例**已不存在**，D58 的"trajectory 是一等概念"结论不受影响），其工具名仍带容器前缀。
 > 非容器族工具的主语**不是容器结构**（`msm` 执行技能 MSM / `praxis` 注入知识 / `handyman` 编排委派 / `dashboard` 仪表 / `localstore` 凭据）。
 > **本次更名（v1.6.0）= 准确性调整，非美学偏好**：`trajectory` → `container_trajectory`（硬切无别名，先例 D46）。
 
@@ -233,9 +233,9 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 |------|------------|------|
 | `container_fs` | root/resolve/exists/list/tree/relative/mkdir/rm/mv/cp/touch/append/reveal/info/find（15 子命令），路径逃逸阻断 | 原 cc_fs |
 | `container_git` | status/commit/push/log/pull/diff；非快进建议；冲突走外部 | 原 cc_git |
-| `container_trajectory` | **7 动作（v1.33 合并后 6 个 + 2026-09-16 增第 7 个）**：🔴 **v1.39.0 两个投递动作更名（硬切无别名）：`wake-later` → `send-later`、`send-message` → `send-now`**——判据：两者本是**同一条投递通路**（同取用机制 / 同载荷 / 同落点语义），只差**时刻**；「唤醒（冷载入）」是**两条路径共有**的属性，不配做区分 ⇒ 族名取共享词干 `send-`、轴取 `-now`/`-later``list`（轨迹清单 + 统计 + 异常标注）/ `show` / `create` / `use`（激活；**内联三项完整性检查**——存在性 / 空壳 / 长期无活动，通过则静默、不通过则提示）/ `rebuild`（原地清空重建 = Ship of Theseus）/ **`send-later`**（= 原 `wake-later` ← 原 wake-add：「未来时刻 + 一条 message」，可唤醒任一轨迹；fire-and-forget——**无回执、不可回收**）/ **`send-now`**（= 原 `send-message`；**即时投递**：**现在**把一条 message 递进目标队列——live 目标立即注入；非 live 走 `sessionController` **冷载入**＝等效于直接 wake，但**不等调度器 tick**。**同步回执**；**不落注册表**〔注册表专管"未来时刻"，`addWake` 硬拒 `at ≤ now`〕。⚠️ 回执只到「**已入队**」——不表示目标已执行/已答复；目标在跑轮次时于**轮次边界**生效，**不打断当前轮**）；AGENT_SESSIONS/ 全周期，S### 自动分配 | 原 session + session_rebuild（v1.30 名 `logbook` → v1.33 名 `trajectory` → **v1.34 本名**）。**已淘汰**：`close` / `archive`（归档改走 `container_fs mv`）/ `health`·`qa`·`summary`（并入 `use`·`list`）/ `hook-develop-guide`（并入 `container_admin msm guide`；**其中承载的 SEP 章节已随 SEP 废除删除**，见 §5.12）/ `wake-list`·`wake-rm`。**两条投递路径的分界（R↓）**：预约（`send-later`，无回执）vs 递话（`send-now`，有回执）——**刻意不把两种语义塞进同一动作**（否则需给 wake 打补丁加回执，破坏 D58 的定案） |
+| `container_trajectory` | **7 动作（v1.33 合并后 6 个 + 2026-09-16 增第 7 个）**：🔴 **v1.39.0 两个投递动作更名（硬切无别名）：`wake-later` → `send-later`、`send-message` → `send-now`**——判据：两者本是**同一条投递通路**（同取用机制 / 同载荷 / 同落点语义），只差**时刻**；「唤醒（冷载入）」是**两条路径共有**的属性，不配做区分 ⇒ 族名取共享词干 `send-`、轴取 `-now`/`-later``list`（轨迹清单 + 统计 + 异常标注）/ `show` / `create` / `use`（激活；**内联三项完整性检查**——存在性 / 空壳 / 长期无活动，通过则静默、不通过则提示）/ `rebuild`（原地清空重建 = Ship of Theseus）/ **`send-later`**（= 原 `wake-later` ← 原 wake-add：「未来时刻 + 一条 message」，可唤醒任一轨迹；fire-and-forget——**无回执、不可回收**）/ **`send-now`**（= 原 `send-message`；**即时投递**：**现在**把一条 message 递进目标队列——live 目标立即注入；非 live 走 `sessionController` **冷载入**＝等效于直接 wake，但**不等调度器 tick**。**同步回执**；**不落注册表**〔注册表专管"未来时刻"，`addWake` 硬拒 `at ≤ now`〕。⚠️ 回执只到「**已入队**」——不表示目标已执行/已答复；目标在跑轮次时于**轮次边界**生效，**不打断当前轮**）；AGENT_SESSIONS/ 全周期，S### 自动分配 | 原 session + session_rebuild（v1.30 名 `logbook` → v1.33 名 `trajectory` → **v1.34 本名**）。**已淘汰**：`close` / `archive`（归档改走 `container_fs mv`）/ `health`·`qa`·`summary`（并入 `use`·`list`）/ `hook-develop-guide`（并入 `container_admin msm guide`；**其中承载的 SEP 章节已随 SEP 废除删除**，见 §5.12）/ `wake-list`·`wake-rm`。**两条投递路径的分界（R↓）**：预约（`send-later`，无回执）vs 递话（`send-now`，有回执）——**刻意不把两种语义塞进同一动作**（否则需给 wake 打补丁加回执，破坏 D58 的定案）。🔴 **队列语义（v1.7.0 补，S142 §0m-5 **真机实测**）**：**每个轮次边界只投出一条待投消息、先入先出，其余顺延到下一边界** —— 两条消息同时在队**不会同批到达**（实测：M1/M2 入队相隔约 4 分钟，分别落在两个相邻轮的开头）。**不丢**；回执仍只承诺「**已入队**」 |
 | `msm` | **单入口执行+发现**：`msm(name, args)` 直接执行；name 未命中 → 模糊候选；`inspect=true` 查用法；无参 → 分类目录；mech-registry.json 单级聚合档；path 逃逸校验；600s 超时 | 原 acc_msm 执行面；管理面归 container_admin |
-| `container_admin` | **机务舱**：role（Skiff 角色 guide/validate/apply/list）/ msm（register/deregister/check/guide/catalog/ccc-config）/ config（CCC 配置读改）/ **autopilot（status/init/generate-bias——周期自唤醒 D59）** | 原 skiff_admin + acc_msm 管理面 + CCC 配置 + **Autopilot（v1.33 起由独立工具 `autopilot-trajectory` 并入；脚本历史动作名 all/init/random）**；**报告与唤起判据同源**——`status`/`init` 直调唤起判据，不自判一份（v1.6.1；脚本时代"报告一份判据、执行一份判据"导致的逐条件分歧由此消除） |
+| `container_admin` | **机务舱**：role（Skiff 角色 guide/validate/apply/list）/ msm（register/deregister/check/guide/catalog/ccc-config）/ config（CCC 配置读改） | 原 skiff_admin + acc_msm 管理面 + CCC 配置。🔴 **v1.7.0 变更**：**`autopilot` 域（status/init/generate-bias）已于 dsp **v1.35.0** 整段退场**（ACC 侧周期自唤醒的机制 / 时钟 / 域 / 面板一并删除；自主巡航改由 **CCC 侧**自管理）⇒ v1.6.1 那条"**报告与唤起判据同源**"补记**随该域一并作废**（已无 `status`/`init` 动作可述） |
 | `dashboard` | health（P1/P2/配置三原则 + MSM registry 完整性）/ time / wait | 原 acc_kit |
 | `praxis` | 可实践理论注入：praxis（索引）/ praxis eap / praxis neat / praxis cce | 原 eap + neat + cce 三合一 |
 | `handyman` | **双模式（v1.5.4 / dsp v1.31.3）**：`mode="foreground"`（缺省）= 一次前台串行委派（宿主委派服务 + 子 agent 模型经 `agentOptions` 注入，返回最终文本，不循环/不校验完成码/不写进度文件）；`mode="background"` = 白名单模型 worker 循环执行（stop token 唯一完成判据）+ jobs=[] 并行编排 + 进度文件续跑；两模式共用 CCC 模型白名单 | 原 loop（v1.24.0 重构；v1.31.3 加模式维度） |
@@ -251,23 +251,23 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 非代码硬编码）。**条件可见不改变"注册"事实**：工具仍在适配层的注册清单里（故工具计数含它），只是按 CCC 配置收窄可见性。
 用途 = 运行态诊断（live 会话清单 / agent 定位 / 唤醒注册表 / 唤起条件链），供 ACC 负责人使用（§4.2 `acc-diag`）。
 
-**两个独立全局闸（v1.6.0，dsp v1.34 S-1 解耦——取代"两条唤醒线共用一闸"）**：两条唤醒线**各有一个**全局开关，
-缺省值与回退键不同、**互不连带**——周期自唤醒 `autopilotWakeEnabled`（**缺省关**；迁移期回退旧键
+**唯一全局闸：一次性唤醒调度器 `wakeSchedulerEnabled`（v1.7.0 收敛；dsp v1.35.0 起）**：缺省**开**、**无**回退键。
+**历史（保留 R↓）**：v1.6.0（dsp v1.34 S-1）曾**解耦为两个独立闸**——周期自唤醒 `autopilotWakeEnabled`（**缺省关**；迁移期回退旧键
 `autopilotEnabled`，用 `??` 保证新键显式 `false` 能覆盖旧键 `true`）｜一次性唤醒调度器 `wakeSchedulerEnabled`
-（**缺省开**，**无**回退键）。**根因**（旧实现缺陷）：共用一闸（`trajectoryEnabled || autopilotEnabled`）⇒ 所有者
-关掉周期自唤醒后，`wake-later` 条目**一并静默滞留**。两闸分属两条线，均**不改变工具契约本身**（工具仍在，
-只是到点不投递）。两闸均**按每次求值读取当前配置**——从关到开**无需重启宿主**即生效（v1.6.1 补记：唤醒
+（**缺省开**）。**解耦的根因**（旧实现缺陷）：两线共用一闸（`trajectoryEnabled || autopilotEnabled`）⇒ 所有者
+关掉周期自唤醒后，`wake-later`（今 `send-later`）条目**一并静默滞留**。🔴 **v1.7.0 现状**：ACC 侧周期自唤醒（autopilot）**已于 dsp v1.35.0 整段退场** ⇒ `autopilotWakeEnabled` **失去对象**，本节由"两个闸"**收敛回一个闸**（`wakeSchedulerEnabled`）；旧键名仅存历史台账。
+该闸**按每次求值读取当前配置**——从关到开**无需重启宿主**即生效（v1.6.1 补记保留：唤醒
 **事件接线不得挂在某一刻的闸值之后**；dsp v1.34.1 修一处"接线位于闸判定之后 ⇒ 闸缺省关时事件永不挂上、
-面板开闸后不重启不生效"的缺陷）。
+面板开闸后不重启不生效"的缺陷——**该纪律对现行唯一闸同样适用**）。
 
 ### 4.2 非必需（平台原生优先）
 
 | 工具 | 说明 |
 |------|------|
-| Skiff / ACP / 微信桥 / Autopilot 唤起 | 宿主特定产品能力（v1.25~v1.27 dsp），不升标准；需要时 dsp 侧文档为准 |
+| Skiff / ACP / 微信桥 | 宿主特定产品能力（v1.25~v1.27 dsp），不升标准；需要时 dsp 侧文档为准。🔴 **v1.7.0**：曾列的 "Autopilot 唤起" **已于 dsp v1.35.0 退场**（改由 CCC 侧自管理），故不再列 |
 | `im-bridge` | **IM 发送家族（dsp v1.31.0）**：参数 channel/action/user/text/file/caption/account（action = send / send-file / users / status）；**条件可见**（本 CCC 未启用任何 IM 通道则从工具面移除）；**只能操作本会话 CCC**（无目标 CCC 参数）；发送与记录复用桥（outgoing hook `source: "proactive"`）。属宿主特定产品能力（当前仅微信通道），不升标准；新增 IM 通道 = 注册一个通道实现，不改工具名与参数形状 |
 | `acc-diag` | **专属运行态诊断工具（dsp v1.33）**：一次调用出全报告（live 会话清单 + 面板解析 + 唤醒注册表 + 唤起条件链）；**专属可见**——默认对所有 CCC 隐藏，只有在自己 `.opencode/serenity.json` 的 `exclusiveTools` 里**逐字声明** `"acc-diag"` 的 CCC 可见（机制 = 条件可见，§4.1 专属工具段）；**只读**（inspect 进程状态与文件，不改任何东西）。ACC 负责人专用能力，不升标准 |
-| `resident` | 常驻 agent（宿主超集优先，如 DSH 后台 subagent / Autopilot 时钟唤起） |
+| `resident` | 常驻 agent（宿主超集优先，如 DSH 后台 subagent） |
 
 ### 4.3 MSM 注册表（mech-registry.json）
 
@@ -311,7 +311,7 @@ Trajectory 感受的是**事件序列时间**——等待只是一个 `waiting` 
 | dashboard | acc_kit | health/time/wait |
 | handyman | loop | 白名单模型 worker 编排 |
 | localstore | localstore | 凭据/配置存储 |
-| container_admin（**autopilot 域**） | autotrajectory-exp | 周期自唤醒一站式管理（status/init/generate-bias；脚本历史动作名 all/init/random）——v1.32 曾并入 `trajectory`（D58），**v1.33 起归机务舱，不再是独立契约工具** |
+| ~~container_admin（**autopilot 域**）~~ | autotrajectory-exp | 周期自唤醒一站式管理（status/init/generate-bias；脚本历史动作名 all/init/random）——v1.32 曾并入 `trajectory`（D58），v1.33 起归机务舱；🔴 **v1.7.0：该域已于 dsp v1.35.0 退场** ⇒ 本行仅存历史（映射目标已不存在） |
 
 **硬切无别名**：旧名不再作为工具提供（LLM 每轮看到 Induction 的 toolsBlock 对照即学新名）。Induction 的 toolsBlock（§5.8）必须含 msm 单入口调用协议。
 
@@ -608,7 +608,7 @@ The ACC (this plugin) provides the following built-in tools:
   praxis       — actionable theory injection: praxis (index) / praxis eap / praxis neat / praxis cce
   handyman     — delegate work to a worker agent on a CCC-whitelisted model; mode="foreground" (default) = one serial child returns its final text; mode="background" = loop-validated worker (completion code + round cap + restart + progress file), jobs=[] orchestrates parallel work
   localstore   — ACC local credential/config storage (CCC-root localstore.json; git policy localstore.gitTrack default deny)
-  container_admin — container administration (the maintenance bay): role (Skiff roles: guide/validate/apply/list) / msm (register/deregister/check/guide/catalog/ccc-config) / config (view) / autopilot (status/init/generate-bias — periodic self-wake)
+  container_admin — container administration (the maintenance bay): role (Skiff roles: guide/validate/apply/list) / msm (register/deregister/check/guide/catalog/ccc-config) / config (view)
 
 MSM call (registered CCC MSMs, deterministic Mech & Semi-Mech):
   Execute:       msm("<name>", ["<arg1>", "<arg2>"])   — run a registered MSM directly (partial name returns matching candidates)
@@ -685,7 +685,7 @@ Do not ignore the reminder; do not stop ongoing work. Codes are single-use;
 never reuse a prior code.
 ```
 
-- **token 体系（v1.4 / v1.5.2）**：CHECKPOINT（计分达阈值）/ `· LIMIT`（上下文压力 rebuild 提醒，普通 + `· MANDATORY` 升级）/ `· REBUILD`（重建锚点头）/ `· BOUNDARY GUARD`（输出守卫打回，仅外部面）/ `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒，v1.5.2）/ `[Autopilot Trajectory · 唤起]`（autopilot 唤起头）/[ACC]（身份信标，保留）
+- **token 体系（v1.4 / v1.5.2）**：CHECKPOINT（计分达阈值）/ `· LIMIT`（上下文压力 rebuild 提醒，普通 + `· MANDATORY` 升级）/ `· REBUILD`（重建锚点头）/ `· BOUNDARY GUARD`（输出守卫打回，仅外部面）/ `· LOGBOOK COMPACTION`（SESSION.md 体积超限重写提醒，v1.5.2）（v1.7.0 删：`[Autopilot Trajectory · 唤起]` 随 dsp v1.35.0 autopilot 退场）/[ACC]（身份信标，保留）
 - **SESSION.md 体积超限提醒（LOGBOOK COMPACTION，v1.5.2，dsp v1.31.1；缺省值 v1.5.3 调整为 200 KB）**：活跃 SESSION.md 字节数超上限（`sessionKeeper.sessionMdMaxKB`，默认 **200 KB**（v1.5.3 起，原 100），0 = 关闭）→ 提示暂停当前工作、加载 eap、按 EAP 分层骨架重写 SESSION.md。四条原则（宿主内嵌，不归 CCC）：① 保留 EAP 分层骨架 ② 内容可外移到 references 文件（SESSION.md 留链接）③ 允许整合/删除不重要事项 ④ 自主裁量权充分允许（唯一硬要求 = 骨架 + 未决项/决策理由/下一步仍可重建）。节奏：超限每轮提醒 → 连续 3 轮升级强制语气 → 回到限内自动停止（自愈）。**不机械阻断**（与 LIMIT 同族，重写是大工程，打断会破坏进行中的任务）。**无 ACK 协议 → 不需 Session 块预声明**（对齐 LIMIT/REBUILD 同族；§5.9 预声明仅覆盖 CHECKPOINT 计分与 ACK）
 - **rebuild 交接协议（v1.5.2，dsp v1.31.1）**：**写侧** = rebuild 提醒（LIMIT）要求把手头 in-flight 事项（卡在哪一步 / 尚未完成什么 / 下一步动作）写在 SESSION.md **最末尾**的固定英文标题 `## In-flight (rebuild handover)` 之下；**读侧** = 重建锚点要求读该区块并逐项处理（区块缺失 → 从最新进度条目推断）。两侧引用**同一标题常量**（单一真相源——标题漂移则读侧找不到写侧写的区块）。读侧取"软指令"而非机械摘取（机械摘取会把区块内容复制进锚点 = 第二真相源）
 - ACK 码（{code}）3 位随机（字母+数字）；ACK 后积分清零；持续注入直至收到正确 code

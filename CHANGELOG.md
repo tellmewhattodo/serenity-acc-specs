@@ -1,10 +1,14 @@
 # Changelog
 
-## 未发布（待定版：v1.6.2 或并入已欠的 v1.7.0）—— 与 dsp v1.38.0 / **v1.39.0** 对齐（2026-09-16 / 09-17，S142）
+## v1.7.0 (2026-09-17) —— 与 dsp **v1.35.0 / v1.38.0 / v1.39.0** 对齐（S142）
 
+**本批性质**：一次**契约面收敛批**——把 dsp 侧自 v1.35.0 起的**机制退场**与 v1.38.0 / v1.39.0 的**动作变更**一次性对齐入标准（specs 是标准 ⇒ 实现退场必须带一次标准版本；此前一直记作"待定版"）。
+
+- 🔴 **§4 工具契约面去 `autopilot` 域**（对齐 dsp **v1.35.0** 的"ACC 侧 autopilot 整段退场"）：① `container_admin` 契约行删 `autopilot（status/init/generate-bias）`；v1.6.1 那条"**报告与唤起判据同源**"补记**随该域一并作废**（已无 `status`/`init` 动作可述）② §5.8 toolsBlock 镜像行同步删该域（**逐字**）③ 映射表里 `container_admin（autopilot 域）` 行**划删并标"仅存历史"** ④ "不升标准的宿主能力"表去掉 "Autopilot 唤起" ⑤ `resident` 行去掉 "Autopilot 时钟唤起" 举例 ⑥ token 体系删 `[Autopilot Trajectory · 唤起]` ⑦ **两个全局闸收敛回一个闸**：`autopilotWakeEnabled` **失去对象**，现行唯一闸 = `wakeSchedulerEnabled`（缺省开、无回退键；解耦根因与"事件接线不得挂在闸值之后"的纪律**两段历史均保留**）⑧ `experiments/autopilot-trajectory/` **删除**（它是"随 npm 分发却零测试、不在门禁"的历史物）⑨ `docs/self-sustaining-trajectory-hypothesis.md` **加 §0「结论与现状」**（**文档不删**：猜想一半验证成立、一半证伪）。
 - **§4.1 动作面 6 → 7**（dsp v1.38.0，2026-09-16）：新增 **`send-message`**（即时投递）—— 与 `wake-later` **共用取用通路**（live 优先 → `sessionController.resolveAgent` 冷载入），差别只在**时刻**（现在 vs 未来）与**回执**（有 vs 无）；**不落注册表**（注册表专管"未来时刻"，`addWake` 硬拒 `at ≤ now`）。⚠️ 回执只到「已入队」；目标在跑轮次时于**轮次边界**生效、**不打断当前轮**。**判据**：**加一条独立原语，而不是给 `wake-later` 打补丁加回执**（后者会让同一动作有两种语义，并动摇 D58 的 fire-and-forget 定案）。
+- 🔴 **§4.1 补队列语义（真机实测，dsp v1.39.0 轮次内的实测结论）**：**每个轮次边界只投出一条待投消息、先入先出，其余顺延到下一边界**——两条消息同时在队**不会同批到达**（实测：两条入队相隔约 4 分钟，分别落在两个相邻轮的开头）；**不丢**，但回执**仍只承诺「已入队」**。
 - 🔴 **§4.1 两个投递动作更名（dsp v1.39.0，2026-09-17）：`wake-later` → `send-later`、`send-message` → `send-now`；硬切无别名** —— 判据（R↓）：两者是**同一条投递通路**（同取用机制 / 同载荷 / 同落点语义），真正的分界只有**时刻**一条；而**回执 / 落注册表 / 不可回收**三项**皆由"未来"推出**，属派生差异。旧名把**共享属性**（唤醒＝冷载入）写进了其中一个名字，而 `send-message` 对冷目标**同样要唤醒** ⇒ **名字选错了轴**。⇒ 族名取共享词干 **`send-`**、轴取 **`-now` / `-later`**（同构）。**被否**：`deliver-now/later`（`deliver` 承诺"**送达**" > 实际只到"入队"）｜`send-at`（与 `-now` 不同构）｜`wake-now/wake-later`（把共享属性升格为族名，且 `wake-now` 与"不打断当前轮"矛盾）。**范围**：**只改动作名**——机制层词汇（`wake-registry.json` / entry id `w-*` / `WakeEntry` / `addWake` / 配置键 `wakeSchedulerEnabled`）**一律不动**（**分层命名**：机制名 ≠ 动作名）。
-- **§5.8 toolsBlock 镜像行逐字回同步**（两次：v1.38.0 补 `send-message` 分句；v1.39.0 更名并把 **`send-now` 提前**）。**核对方法**（本批实测，可复现）：取实现侧该行全文，在 specs 仓 `git grep -n -F "<该行全文>"` ⇒ 命中即逐字一致。
+- **§5.8 toolsBlock 镜像行逐字回同步**（三处：v1.38.0 补 `send-message` 分句；v1.39.0 更名并把 **`send-now` 提前**；本批再删 `container_admin` 的 autopilot 域）。**核对方法**（实测，可复现）：取实现侧该行全文，在 specs 仓 `git grep -n -F "<该行全文>"` ⇒ 命中即逐字一致。
 
 ## v1.6.1 (2026-09-15)
 
