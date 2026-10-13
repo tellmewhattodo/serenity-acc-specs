@@ -1,6 +1,6 @@
 # DSH Plugin 开发标准（v1.0）
 
-> 权威来源：DSH staging checkout `docs/user/develop/basic/*`、`docs/user/develop/framework/*`、`docs/cookbook/*`、`docs/testing.md`、`apps/cli/src/plugin.ts`，以及官方范例 [turtle-ui](https://github.com/deepseek-harness/turtle-ui)（`dsh plugin` git 安装被官方 publish.md 点名引用）与组织内 marisa。
+> 权威来源：DSH staging checkout `docs/user/develop/basic/*`、`docs/user/develop/framework/*`、`docs/cookbook/*`、`docs/testing.md`、`apps/cli/src/plugin.ts`，以及官方范例 [turtle-ui](https://github.com/deepseek-harness/turtle-ui)（`dsh plugin` git 安装被官方 publish.md 具名引用）与组织内 marisa。
 > 本文档是 dsh-serenity-plugin 的合规基线：实现必须逐项对齐 A–G 各节；核对清单见文末。
 
 ---
@@ -16,11 +16,11 @@ export function apply(ctx: Context) { /* 注册能力 */ }
 | # | 标准 | 出处 |
 |---|------|------|
 | A1 | 三种形态：函数式（`name` + `apply`）/ 对象式（`{name, inject, apply}`）/ 类式（`Service` 子类） | basic/index.md |
-| A2 | 函数式够用；**类式仅当对外提供 service** | basic/index.md |
+| A2 | 函数式即已足够；**类式仅当对外提供 service** | basic/index.md |
 | A3 | 依赖声明 `inject: ['tools', ...]` — Cordis 等依赖就绪后 `apply`；依赖消失自动卸载重载 | framework/index.md |
 | A4 | `ctx` 注册自动清理（事件/工具/定时器）；自定义资源用 `ctx.effect(() => cleanup)` | framework/index.md |
-| A5 | 配置 = 导出 `Config` 接口 + **同名 Schemastery schema**（默认值放 schema），加载时校验，非法 fail loud | basic/config.md |
-| A6 | 两部署可能要不同的值必须是配置字段，禁止硬编码（测试：`cordis.yml` 能否不改代码改掉） | basic/config.md |
+| A5 | 配置 = 导出 `Config` 接口 + **同名 Schemastery schema**（默认值置于 schema），加载时校验，非法 fail loud | basic/config.md |
+| A6 | 两部署可能要不同的值必须是配置字段，禁止硬编码（测试：`cordis.yml` 能否不改代码即修改） | basic/config.md |
 | A7 | Fiber 状态机：`PENDING → LOADING → ACTIVE / FAILED`，`ACTIVE → UNLOADING → DISPOSED` | framework/index.md |
 
 ## B. 包声明（bundle 清单）
@@ -55,8 +55,8 @@ ctx.tools.register(defineTool({
 | C1 | `defineTool` 自动校验参数（类型/必填/字面量/oneOf/嵌套），`execute` 里 args 已可信 | adding-a-tool.md |
 | C2 | 注册借用 readonly 定义：注册后不可改 schema/callback；热替换 = dispose 旧 effect 再注册 | adding-a-tool.md |
 | C3 | 执行身份保护：args 冻结、opaque `exec.token`、callId/name/arguments/agent/token/signal 不可变 | adding-a-tool.md |
-| C4 | 返回一个规范 JSON 值（`output.schema` 声明）；不返回 content block、不让调用方解析 prose | adding-a-tool.md |
-| C5 | 抛错或非法返回值 = `isError`；基础设施失败 throw，业务非理想态放规范值 | adding-a-tool.md |
+| C4 | 返回一个规范 JSON 值（`output.schema` 声明）；不返回 content block、不要求调用方解析 prose | adding-a-tool.md |
+| C5 | 抛错或非法返回值 = `isError`；基础设施失败 throw，业务非理想态以规范值返回 | adding-a-tool.md |
 | C6 | 尊重 `exec.signal` 取消在途工作 | adding-a-tool.md |
 | C7 | 可选 `output.presentationMeta(args, value)` — 持久化 UI 卡片的可回放 JSON | adding-a-tool.md |
 | C8 | 异步通知用 `exec.agent.inject({content, source:{kind:'plugin', plugin:'<name>'}})` — 追加到下一个模型请求 | adding-a-tool.md |
@@ -79,7 +79,7 @@ ctx.tools.register(defineTool({
 | E1 | `dsh plugin --profile <name> add <spec>` = 初始化 profile → pnpm 转发 → bundles 对账 | plugin.ts / publish.md |
 | E2 | 本地开发循环：`dsh plugin --profile demo add link:~/git/turtle-ui`（link: 免重装热更） | turtle-ui README |
 | E3 | 从 git 安装：`dsh plugin --profile demo add github:you/hello-plugin`（fetch 源码非构建产物） | publish.md |
-| E4 | **git 安装必须配 `prepare` script** — 自包含从 src 转译（tsdown 专用配置，无 project references、不 typecheck）；turtle-ui 是官方点名范例 | publish.md / turtle-ui |
+| E4 | **git 安装必须配 `prepare` script** — 自包含从 src 转译（tsdown 专用配置，无 project references、不 typecheck）；turtle-ui 是官方具名范例 | publish.md / turtle-ui |
 | E5 | pnpm ≥10 默认阻止 git 依赖 prepare → 首次 add 失败，用户需把 key 加入 profile `pnpm-workspace.yaml` `allowBuilds:`；dsh 会提示 | publish.md |
 | E6 | allowBuilds = 允许安装时执行包代码（agent 沙箱之外）— 只允许信任源码，pin commit `#<sha>` | publish.md |
 | E7 | 不想要构建许可：npm publish 带 `lib/` 或 `pnpm pack` tarball | publish.md |
@@ -102,8 +102,8 @@ ctx.tools.register(defineTool({
 | G1 | 分层：Unit → Coverage gate（src 逐文件 100%）→ Real-API e2e（带 key，无 key 自跳过）→ Snapshot → Web browser snapshot |
 | G2 | 偏好真实实现而非 mock：只 mock 昂贵/非确定边界（LLM 适配器/网络/时钟） |
 | G3 | 验证世界而非自报：e2e 断言重跑命令/重读文件；e2e 自管资源（afterEach dispose） |
-| G4 | 测试真实入口路径：产品可见插件需要非单元真实组合测试（Loader + cordis.yml 启动）；包 bin 跑构建产物 |
-| G5 | 每个非平凡模型/协议/人可见变更同 PR 加/更新无 key snapshot 场景 |
+| G4 | 测试真实入口路径：产品可见插件需要非单元真实组合测试（Loader + cordis.yml 启动）；包 bin 执行构建产物 |
+| G5 | 每个非平凡模型/协议/人可见变更同 PR 新增/更新无 key snapshot 场景 |
 
 ---
 
@@ -119,6 +119,6 @@ ctx.tools.register(defineTool({
 | E1–E4 | 官方安装 + prepare | `dsh plugin add` 路径 + `prepare` script | ✅ v1.15+ |
 | F1–F4 | 包/构建标准 | type:module + exports + tsdown 双 bundle + prepare 配置 | ✅ v1.15+ |
 | F6 | 零运行时依赖 | 无 dependencies（peer 由宿主提供） | ✅ |
-| G1–G5 | 测试策略 | vitest 全绿 + 真实组合 preflight | 🟡 分层逐步加 |
+| G1–G5 | 测试策略 | vitest 全绿 + 真实组合 preflight | 🟡 分层逐步补充 |
 
 > 版本注释：v1.15.0 完成 B/E/F 合规化（dsh.bundle + 自带 patch + prepare + peerDependencies）。
