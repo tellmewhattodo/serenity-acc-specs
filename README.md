@@ -1,4 +1,4 @@
-# Serenity-ACC 认知容器标准（Specs v2.0.0）
+# Serenity-ACC 认知容器标准（Specs v3.0.0）
 
 > **定位**：宁静号本质是**标准**而非实现。任何符合本标准的智能体（agent harness），都应当可以与任何现存 CCC 良好工作——**任何一方都无需修改**。
 > **兼容硬约束**：**opencode 格式和约定的 skill 模式必须得到支持**（无论 ACC 的实现是什么）。
@@ -24,9 +24,9 @@
 - §0 认知容器的理论根基
 - §1 标准目标与不变量（I1–I6）
 - §2 术语
-- §3 CCC 结构约定（宿主无关）
+- §3 CCC 结构约定（宿主无关；+ §3.0.1 轨迹声明面 `trajectory.json`）
 - §4 工具契约（宿主无关；+ §4.5 CRO 轨迹自编程唤起）
-- §5 Induction（成员装配；**重点**；+ §5.12 轨迹 skill 供给）
+- §5 Induction（成员装配；**重点**；+ §5.9a 轨迹章程层 / §5.9b 四层装配模型 / §5.12 轨迹 skill 供给）
 - §6 拦截缝语义
 - §7 激活协议
 - §8 skill 格式兼容基线
@@ -49,7 +49,7 @@
 
 - **发生**：认知以认知 Loop 的形式展开（§0.2）——发生在 session（trajectory 的载体）中。
 - **存储**：轨迹持久化——SESSION.md 是轨迹的持久身体，AGENT_SESSIONS/ 是轨迹的库房。
-- **再发生**：轨迹被新 agent 重新推动（`container_trajectory rebuild`、多 agent 接续）——Ship of Theseus：本体不变，**载体（session）与推动者（agent）均可换**。
+- **再发生**：轨迹被新 agent 重新推动（`cognitive_trajectory rebuild`、多 agent 接续）——Ship of Theseus：本体不变，**载体（session）与推动者（agent）均可换**。
 
 ### 0.2 认知 Loop：动作与反馈同质
 
@@ -59,12 +59,12 @@
 - 等待用户不是空转，而是 **反馈采样通道**——等待期间轨迹仍存在，仍保留未来行动的可能。
 - 不存在"Loop 之外"的交互：人类回复、宿主事件、工具结果，全部是反馈输入。
 
-### 0.3 Trajectory 是主体
+### 0.3 认知轨迹（cognitive trajectory）是主体
 
-> **Agent 是可替换的，Trajectory 才是连续的。**
+> **Agent 是可替换的，认知轨迹才是连续的。**
 
 ```
-Trajectory（主体，跨越时间的存在）
+认知轨迹（cognitive trajectory —— 主体，跨越时间的存在）
     ↑ 由某个 Agent 推动
 Session（载体，可重建——轨迹此刻的承载实例）
 LLM / Runtime / Tools（认知介质，可替换）
@@ -73,22 +73,46 @@ LLM / Runtime / Tools（认知介质，可替换）
 - **LLM 是认知介质，不是大脑**——它产生下一步认知与行动，但本身不等于那条持续存在的轨迹。
 - **Agent 是过程中的角色**——今天由 A 推动，明天可由 B 接管；只要轨迹的状态、上下文、未完成的认知任务仍在，行动就能继续。
 - **Session 是轨迹的可重建载体**——SESSION.md 是持久身体（存储形态，原位不动）；工作会话是运行副本（再发生形态，可丢弃重建）。
-- **Trajectory 在寻找 Agent**——不是 Agent 产生轨迹，而是轨迹寻找能够继续推动它的 agent。
+- **认知轨迹在寻找 Agent**——不是 Agent 产生轨迹，而是轨迹寻找能够继续推动它的 agent。
 
-### 0.3.1 Session 是 Trajectory 的可重建载体
+> ### 🔴 术语的正式化（这是**设计层面的判定**，不是措辞偏好）
+>
+> 本概念自本标准首版起就以 **trajectory** 指称。从本版起，**中文正式术语 = 「认知轨迹」**，
+> 英文正式术语 = **cognitive trajectory**，工具名 = **`cognitive_trajectory`**（原 `container_trajectory`）。
+>
+> **为什么改（判据两条，缺一不可）**：
+> 1. **它是主体，而旧名把它读成了容器的一个部件。** `container_<X>` 这一族的判据是
+>    **`X` 是容器自身的结构面**（文件系统 / git / 管理 / 本体）。而认知轨迹**不是容器的结构**——
+>    它是**容器服务的那个主体**。名字带容器前缀 ⇒ 读的人会自然地把它归进"结构面"，
+>    于是「轨迹 = 一条记录」这个误解就有了名字层面的支撑。
+> 2. **旧名与概念的实际地位不符。** 本标准的每一条机制（会话载体 / 装配 / 督促 / 唤醒 / CRO /
+>    约束面 / skill 供给 / 记忆归属）最终都服务于**同一条轨迹的连续性**（I6）。
+>    一个承担全部机制主语的**主体**，不该按"容器的一个附属部件"命名。
+>
+> ⇒ **新的命名判据**（取代"凡一等公民都带 container 前缀"）：
+> **`container_<X>` = 掌管容器结构之 X**（`container_fs` / `container_git` / `container_admin`）；
+> **无前缀 = 主语不是容器结构**（`cognitive_trajectory` / `msm` / `praxis` / `dashboard` / `localstore`）。
+>
+> ⚠️ **这次更名不是功能变更**：动作面、落盘格式、行为**一律不变**；
+> 变的只是**名字与它表达的层级关系**。但它是**设计层面的变动**——
+> 它把"轨迹是主体"从**理论章的一句话**（§0.3）提升为**贯穿工具面、结构面与装配面的命名事实**。
+> **实现者必须按新名对齐**（硬切无别名）。
+
+
+### 0.3.1 Session 是认知轨迹的可重建载体
 
 - **载体可重建，轨迹连续**：`rebuild` 丢弃当前载体（会话历史），新建载体承接同一 trajectory——载体换新，本体不变。
 - **同义视角**：session 与 trajectory 是同一认知存在的两个面。
 
 ### 0.4 时间的相对性
 
-人类感受的是**钟表时间**（等待几天 = 中断、流逝）；Trajectory 感受的是**事件序列时间**（等待只是一个 `waiting` 状态，SESSION.md 记着中断点，下次接续无缝继续）。
+人类感受的是**钟表时间**（等待几天 = 中断、流逝）；认知轨迹感受的是**事件序列时间**（等待只是一个 `waiting` 状态，SESSION.md 记着中断点，下次接续无缝继续）。
 
 > 对人类是"隔了三天"，对 trajectory 只是"两次事件之间的间隔"这一数据点。**等待不是死亡**——只要轨迹存在，它就保留未来继续行动的可能。
 
 ### 0.5 认知闭环
 
-从**人类主体**视角看宁静号是开环的（人类发起、人类终结、LLM 是工具）；从 **Trajectory 主体**视角看它是**闭环**的：人类介入 = 反馈输入之一｜SESSION.md = 持久身体（存储）｜`rebuild` = 换代理继续（再发生）｜first-anchor = 身份锚定｜人类回复 = 反馈采样通道。
+从**人类主体**视角看宁静号是开环的（人类发起、人类终结、LLM 是工具）；从 **认知轨迹主体**视角看它是**闭环**的：人类介入 = 反馈输入之一｜SESSION.md = 持久身体（存储）｜`rebuild` = 换代理继续（再发生）｜first-anchor = 身份锚定｜人类回复 = 反馈采样通道。
 
 > 协作的规模不受单个 agent 生命周期限制，而受**轨迹的连续性**限制。只要轨迹连续，参与的 agent、模型、宿主都可以替换。
 
@@ -96,7 +120,7 @@ LLM / Runtime / Tools（认知介质，可替换）
 
 | 理论概念 | 已有机制 | 说明 |
 |---------|---------|------|
-| Trajectory 主体 | SESSION.md 持久轨迹 | 轨迹是本体，会话是工作副本 |
+| 认知轨迹主体 | SESSION.md 持久轨迹 | 轨迹是本体，会话是工作副本 |
 | 认知 Loop | agent turn / `rebuild` | loop 是认知发生的单位；重建 = 载体换新轨迹连续 |
 | 动作=反馈 | tool 调用 / trajectory-assistant / 等待用户 | 一切外部交互都是反馈采样 |
 | 闭环 | first-anchor + 自动继续 + 多 agent 接续 | 轨迹主体视角下天然闭环 |
@@ -145,11 +169,11 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 | **入口技能** | CCC 的顶层认知技能（`*-serenity` 命名的 SKILL.md），全文注入系统提示（§5.7）。 |
 | **MSM** | Mech & Semi-Mech。CCC 内注册的可执行单元（确定性操作），经 mech-registry.json 登记。 |
 | **拦截缝** | 宿主提供的可编程拦截点（工具调用前/后、会话生命周期、系统提示组装）。 |
-| **轨迹 / Trajectory** | 认知过程本身的连续存在——SESSION.md 是它的持久身体，AGENT_SESSIONS/ 是它的库房。**主体**：Agent 可替换、Session 可重建，轨迹连续。 |
-| **会话 / Session** | **Trajectory 的可重建载体**。SESSION.md 是持久身体（存储形态），工作会话是运行副本（再发生形态）。载体可丢弃/重建（`rebuild`），轨迹通过载体重建延续（Ship of Theseus）。 |
+| **认知轨迹 / cognitive trajectory** | 认知过程本身的连续存在——SESSION.md 是它的持久身体，AGENT_SESSIONS/ 是它的库房。**主体**：Agent 可替换、Session 可重建，认知轨迹连续。🔴 **它没有生命周期**：不完成、不关闭、不过期。唯一会变的是**存在哪里**（`archive` 只是移出活跃清单，一个字节都不动）。 |
+| **会话 / Session** | **认知轨迹的可重建载体**。SESSION.md 是持久身体（存储形态），工作会话是运行副本（再发生形态）。载体可丢弃/重建（`rebuild`），轨迹通过载体重建延续（Ship of Theseus）。 |
 | **认知 Loop** | 认知发生的基本单位。一切外部交互都是反馈；动作与反馈同质（§0.2）。 |
 | **认知介质** | LLM / Runtime / Tools。可替换，不属于轨迹本体。 |
-| **trajectory-assistant** | 过程性动态提示注入机制的统称（计分督促 + 重建提醒 + 输出守卫打回 + 体积治理提醒）。**关卡思想限结构与时机，提示词用词禁游戏黑话**（§5.11）。 |
+| **轨迹督促 / trajectory-assistant** | 过程性动态提示注入机制的统称（计分督促 + 重建提醒 + 输出守卫打回 + 体积治理提醒）。**关卡思想限结构与时机，提示词用词禁游戏黑话**（§5.11）。 |
 | **Induction / 成员装配** | **系统提示注入机制的统称**：把新实例（新会话 / rebuild / 新 agent）引入为轨迹成员的装配机制——启动时按 §5.0 骨架注入装配文本，使其获得完整主体认知从而"注册"为轨迹成员。本质 = 成员资格重建协议的可注入面。 |
 | **轨迹 skill 声明** | 轨迹在自身持久身体（`SESSION.md` 顶部 YAML frontmatter）的 `skills:` 键里声明要挂的 skill；ACC 在**绑定期间**注入其 `SKILL.md` 全文（§5.12）。 |
 | **serenity-skill** | 本容器的**增强型 skill 标准**：在 opencode skill 格式（§8.1 兼容基线）之上追加**可选**本体口（固定名 `<skill>/skill.ttl`）与**必过**分层档（A3）。**未建模的普通 skill 完全合法**。 |
@@ -163,11 +187,13 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 ├── .serenity                    ← P1 标记：CCC 边界（文件）；内容 = 顶层入口 skill 名
 ├── .serenity-safe-on            ← 安全模式标记（存在即 ON；用户能力）
 ├── .git/                        ← P2：CCC 必须处于 git 管理下
-├── AGENT_SESSIONS/              ← 工作会话全周期追踪
+├── AGENT_SESSIONS/              ← 工作会话全周期追踪（认知轨迹的库房）
 │   ├── <轨迹目录>/
 │   │   ├── SESSION.md           ← 轨迹的持久身体（7 段固定格式，§5.9）
-│   │   ├── REBUILD-TODO.md      ← 交界便签（§3.0）
-│   │   ├── cro-wake-log.json    ← ACC 侧唤起流水（§4.5.8）
+│   │   ├── PROMPT.md            ← 轨迹的章程（轨迹级提示词，§5.9 的轨迹章程层）
+│   │   ├── trajectory.json      ← **轨迹声明面**：约束 ＋ 旧标识 ＋ 机器绑定（§3.0.1）
+│   │   ├── REBUILD-TODO.md      ← 交界便签（§3.0，非权威）
+│   │   ├── cro-wake-log.log     ← ACC 侧唤起流水（§4.5.8，纯文本）
 │   │   ├── continuous-re-occurrence.ts  ← CRO 程序（文件在 = 启用，§4.5）
 │   │   └── cro-state.json       ← CRO 程序自己的状态（**程序主语**，非 ACC 契约）
 │   ├── .restrict-diag.json      ← 工具可见性诊断（§3.0）
@@ -197,10 +223,52 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 |---|---|---|---|---|
 | `SESSION.md` | **轨迹**（持久身体） | **有**：7 段固定格式 + 粒度纪律（§5.9） | `sessionKeeper.sessionMdMaxKB`（缺省 200 KB） | **权威**（轨迹的唯一持久真相源） |
 | `REBUILD-TODO.md` | **交接**（一次性材料） | **无**——不规定内部结构；要求**按 EAP 写**但不给骨架 | **10 KB，硬编码常量，刻意不设配置键** | 🔴 **明确非权威**：无留档义务，可**整份丢弃** |
-| `cro-wake-log.json` | **实现**（投递面） | 有（字段形状由实现定，语义见 §4.5.8） | **2 日窗**，写入时程序化轮转 | 观测档，非判定真相源 |
+| `cro-wake-log.log` | **实现**（投递面） | 有（字段形状由实现定，语义见 §4.5.8） | **2 日窗**，写入时程序化轮转 | 观测档，非判定真相源 |
 
 - **`REBUILD-TODO.md`**：与 SESSION.md **同目录**、**固定文件名**、**唯一机械约束 = 10 KB 上限**。取代旧机制"把 in-flight 事项写在 SESSION.md 末尾的保留段"——**持久文件（有格式义务）与只用一次的交接材料必须分离**。写侧 = rebuild 提醒；读侧 = 重建锚点；体积提醒 = 独立 token（§5.11）。**三处引用同一文件名常量**，一旦漂移**没有任何机械信号会报警**。
-- **`.restrict-diag.json`**：工具可见性诊断档，至少含 **`denyByKey`** —— `{会话 key → 该 key 实际生效的 deny 清单}`，用于回答"某工具为什么／为什么没被隐藏"。**诊断面**（读状态、不改状态）。
+- **`.restrict-diag.json`**：工具可见性诊断档，至少含 **`denyByKey`** —— `{会话 key → 该 key 实际生效的 deny 清单}`，用于回答"某工具为什么／为什么没被hide"。**诊断面**（读状态、不改状态）。
+
+### 3.0.1 轨迹声明面：`trajectory.json`（一份文件，三件事）
+
+认知轨迹目录里，**ACC 自己产出的"声明"只有一个文件**：`trajectory.json`。
+它装的是**关于这条轨迹的、可被人读写与 diff 的声明**——不是运行态，也不是流水。
+
+```jsonc
+{
+  "model": "provider/model",          // 可选；缺省回退宿主级 cheap-worker.defaultModel
+  "tools": ["read","grep","msm"],     // 非 MSM 工具白名单（白名单外**从 schema 移除**）
+  "msms":  ["memory-tool"],           // MSM 白名单（msm 单入口内再过滤）
+  "cognitiveTrajectory": { "session": true, "keeper": true, "rebuild": true },
+  "systemPrompt": "...",              // 内嵌章程（兼容期；PROMPT.md 优先）
+  "systemPromptFile": ".opencode/…",  // 章程文件（相对 CCC 根，按 mtime 热重载）
+  "uid": "my-handle",                 // 可选：只读遗留标识（身份已归轨迹编码）
+  "cro": { "host": "<机器名>" }       // 可选：本轨迹的 CRO 程序**只许**哪台机器跑（§4.5）
+}
+```
+
+**三件事为什么并进一个文件**（判据 = 主语一致）：约束面／旧标识／机器绑定**都是"这条轨迹的声明"**，
+它们的主语相同、生命周期相同、都应随 git 走。分散成三个文件名时，**"哪个是声明、哪个是运行态"
+只能靠记文件名**——而运行态（`cro-state.json`）恰好也在同一个目录里。收拢之后主语一目了然：
+**`trajectory.json` 里的是声明；`cro-state.json` 是程序的产物。**
+
+**刻意**不**并进去的一样：`cro-wake-log.log`**（§4.5.8）。判据两条：① 它是**追加型流水**（按时间窗裁剪）；
+② 并入结构文件 ⇒ 每次写一行流水都要**重写整份声明** ⇒ 一次写坏**同时丢掉约束面与机器绑定**。
+⇒ **声明可人改、可 diff；流水高频追加、可丢** —— 两种写入频率与两种失效代价，不能同居一个写通道。
+
+#### 文件名族与两代并读（**不得硬切**）
+
+| 项 | 契约 |
+|---|---|
+| **判据族** | `trajectory.json` → `trajectory-constraint.json` → `skiff.json` —— **任一存在即成立**，**顺序即优先级**（新名优先） |
+| **写入** | **只写 `trajectory.json`**；旧文件**永不自动删** |
+| **为什么认族** | 上游改名、下游写死旧名是**本族反复发生的失效形态**（症状"配置没生效"与真因"文件名对不上"在读数上完全不像）。⇒ 再改名只往族里加一项。 |
+| **`cro.host` 的额外硬约束** | 🔴 **必须两代并读**（新字段 ＋ 旧文件 `cro-host-binding`）。理由**有行为后果**：绑定声明要跟着轨迹**走到第二台机器**，在那里被判成「**绑给了别人**」而正确地不跑；硬切之后那台机器读到的是「**没绑**」——*表面结果相同，但判据退化*（失去可诊断性）。 |
+| **`uid` 的读法** | 声明面有合法 `uid` ⇒ 用它；否则回落旧独立文件 `TRAJECTORY-UID`。**写入侧无此动作**（身份 = 轨迹编码，创建时指定）。 |
+
+> **术语**：本节说的"轨迹编码（code）"是**目录名里那个固定位置的段**（`YYYY-MM-DD--<code>`），
+> 它是轨迹的**唯一标识**。`uid` 是它之前的一代标识，**只读保留**（存量轨迹按它指认仍然有效）。
+> ⚠️ 两者**不是同一个字段**：`code` 是派生的结构，`uid` 是可选的别名。
+
 
 ### 3.1 配置单真源
 
@@ -220,11 +288,15 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
   "trajectory": { "skills": ["<skill-name>"] },    // CCC 级 skill 供给（§5.12，与轨迹级取并集）
   "hooks": { "enabled": true, "injectAccContext": true, "enforceSafeMode": true,
              "sessionKeeper": true, "autoRestoreSession": true },
-  "skiff": { "roles": {} },                        // Skiff 角色定义（§4.2）
   "weixin": {},                                    // 微信桥（宿主特定产品能力，§4.2）
   "autopilotTrajectory": {}                        // 自主巡航（CCC 自管理；ACC 侧周期唤起已退场）
 }
 ```
+
+> **轨迹级的配置不住在这里**（判定，不是偏好）：模型 / 白名单 / 纪律参与项 / 章程路径
+> **全部住在该轨迹自己的 `trajectory.json`**（§3.0.1）。判据 = **"这条轨迹受什么约束"的唯一真相源
+> 必须在那条轨迹的目录里**——放在容器配置表里会长出一个"平行概念"，
+> 而它的主语（某一条轨迹）与载体（容器表）是错位的。**容器配置表只管"对所有轨迹相同"的东西**。
 
 > **`safeMode.hiddenTools`（条件屏蔽，非白名单）**：判据是**条件**——标记存在时才隐藏，**标记消失即全部恢复**；基础表恒隐 `bash` 不受影响。
 > 🔴 **名字不做校验**：未注册名会让宿主的 `restrict` **整次拒绝**（宿主契约逐字："Empty filters, unknown names, scope-local names, and reserved transport names **fail**"）⇒ **调用方必须按"失败退化为基础表"处理**，否则一个名字写错即会连 `bash` 的隐藏一并丢失。
@@ -245,6 +317,7 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 |---|---|---|
 | `wakeSchedulerEnabled` | **已退役** —— 唤醒调度器**恒武装、无闸** | 残留 ⇒ **静默忽略**；**不得**当活闸写进文档或判据 |
 | `rebuildEnabled` | **已退役** —— 超限重建**恒开、无总闸** | 残留 ⇒ **静默忽略**；schema 与读取方均已删除 |
+| `skiff`（角色定义表） | **已退役** —— 角色模型整块被「认知轨迹 ＋ 约束面文件」取代（§3.0.1） | 残留 ⇒ **静默忽略**；**不得**再出现"角色表"这类判据 |
 
 > 🔴 **"静默忽略"是契约的一部分**：存量 CCC 配置里可能仍有这些键，实现**不得**因它们报错（否则升级实现即打断存量 CCC）。反之，**任何文档/判据不得再把它们当有效开关**。
 
@@ -276,9 +349,9 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 
 每个 ACC 适配层必须提供以下工具（命名、子命令、语义一致；实现方式宿主自定）。
 
-> **命名体系**：采用 **container 族 / praxis / container_trajectory / dashboard / msm 单入口 / container_admin 机务舱**。osp/pi 按本 spec 对齐（改名映射见 §4.4；**硬切无别名**）。
+> **命名体系**：采用 **container 族 / praxis / cognitive_trajectory / dashboard / msm 单入口 / container_admin 机务舱**。osp/pi 按本 spec 对齐（改名映射见 §4.4；**硬切无别名**）。
 >
-> **命名判据**：**`container_<X>` = 掌管本容器自身之 X 的工具**（`container_fs` / `container_git` / `container_trajectory` / `container_admin`）。前缀表**作用域（在本容器内）**，**不表**"与容器平级"——trajectory 机制虽是一等公民，工具名仍带容器前缀。非容器族工具的主语**不是容器结构**（`msm` 执行技能 MSM / `praxis` 注入知识 / `handyman` 编排委派 / `dashboard` 仪表 / `localstore` 凭据）。
+> **命名判据**（本版**已修订**，见 §0.3）：**`container_<X>` = 掌管本容器自身之 X 的工具**（`container_fs` / `container_git` / `container_admin`）——前缀表**作用域**。而**认知轨迹不是容器的结构面**，它是容器服务的**主体** ⇒ **工具名无容器前缀**（`cognitive_trajectory`）。**主语不是容器结构的工具一律无前缀**：`msm`（执行技能 MSM）/ `praxis`（注入知识）/ `dashboard`（仪表）/ `localstore`（凭据）/ `cognitive_trajectory`（轨迹）。
 >
 > **🔴 工具数与现值不回写本节**：本节写**契约面**。**实现此刻注册了几个、版本号是多少**是易变值 ⇒ 读数 = `dashboard health` ＋ 该实现仓 `CHANGELOG.md`。
 
@@ -288,9 +361,9 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 |------|------------|------|
 | `container_fs` | root/resolve/exists/list/tree/relative/mkdir/rm/mv/cp/touch/append/reveal/info/find（**15 子命令**），路径逃逸阻断 | 原 cc_fs |
 | `container_git` | **6 动作**：status/commit/push/log/**pull**/**diff**（要点见下） | 原 cc_git |
-| `container_trajectory` | **8 动作**：`list` / `show` / `create` / `use` / `rebuild` / `send-later` / `send-now` / `cro-guide`（逐动作语义见下） | 原 session + session_rebuild |
+| `cognitive_trajectory` | **10 动作**：`list` / `show` / `create` / `use` / `rebuild` / `archive` / `uid` / `send-later` / `send-now` / `cro-guide`（逐动作语义见下） | 原 session + session_rebuild；原名 `logbook` → `trajectory` → `container_trajectory` → **本名** |
 | `msm` | **单入口执行+发现**：`msm(name, args)`；name 未命中 → 模糊候选；`inspect=true` 查用法；无参 → 分类目录；单级聚合注册表；path 逃逸校验；600s 超时 | 原 acc_msm 执行面；管理面归 container_admin |
-| `container_admin` | **机务舱**：`role`（guide/validate/apply/list）/ `msm`（register/deregister/check/guide/catalog/ccc-config）/ `config` | 原 skiff_admin + acc_msm 管理面 + CCC 配置。🔴 **已退场**：`autopilot` 域（ACC 侧周期自唤醒整段删除） |
+| `container_admin` | **机务舱**：`config`（docs / docs `<chapter>` / view / guide / validate / apply / list）＋ `msm`（register / deregister / check / guide / catalog / ccc-config） | 原 skiff_admin + acc_msm 管理面 + CCC 配置。🔴 **已退场**：`autopilot` 域（ACC 侧周期自唤醒整段删除）｜`role` 域（角色模型退役，动作并入 `config`，**保留为过渡别名**） |
 | `dashboard` | health（P1/P2/配置三原则 + registry 完整性）/ time / wait | 原 acc_kit |
 | `praxis` | 可实践理论注入：`praxis`（索引，无参）/ **四段** `eap` / `neat` / `cce` / **`ontology`** | `ontology` 段 = 本体工程**方法文本**（与同名**工具**分属两面：一个**说**、一个**跑**） |
 | `ontology` | 本体工程**引擎**：`init` / `check` / `explain` / `verify` / `review` / `compliance` / **`viz`** —— **七个动作** | 退出码 **0/1/2/4 作为返回值**（`code!==0` **不抛**）；`path`/`skills` 过路径守卫。`viz` **产出文件**（其余回文本）：落 `<CCC>/_tmp/ontology-viz/`，**文件名必须含来源路径**（相对路径压平 `/`→`__`），否则两个同名 `skill.ttl` 互相覆盖而两次回执都报成功 |
@@ -298,20 +371,22 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 | `handyman` | **双模式**：`foreground`（**缺省**）= 一次前台串行委派（返回最终文本，不循环/不校验完成码/不写进度文件）；`background` = 白名单模型 worker 循环执行（stop token 唯一完成判据）+ 进度文件续跑。均支持 `jobs=[...]` | 原 loop。**前台并行上限 = 10（硬编码）**；超限 ⇒ **拒绝且一个都不起**。后台上限 = `handyman.maxParallel`（缺省 10）。`providerPreflight()` **在创建前**判定 adapter 有无 |
 | `localstore` | ACC 凭据/配置存储（CCC 根 localstore.json；git 策略 `localstore.gitTrack`） | 缺省 deny |
 
-**`container_trajectory` 逐动作语义**：
+**`cognitive_trajectory` 逐动作语义**：
 
 | 动作 | 语义 |
 |---|---|
-| `list` / `show` / `create` | 轨迹清单 + 统计 + 异常标注 / 读一条 / 建一条 |
+| `list` / `show` / `create` | 轨迹清单 + 统计 + 异常标注 / 读一条 / 建一条（`--id` 可**指定编码**） |
 | `use` | 激活（**内联三项完整性检查**：存在性 / 空壳 / 长期无活动——通过则静默、不通过则提示） |
 | `rebuild` | 原地清空重建 = Ship of Theseus |
+| `archive` | 移入归档区、**离开活跃清单**；单向、不覆盖、**内容逐字节不变**。无反向动作（恢复走 `container_fs mv`） |
+| `uid` | **只读**遗留标识（无参数 = 读；传值 = **拒绝**并指向 `create --id`） |
 | `send-later` | 未来时刻 + 一条 message，可投给任一轨迹；fire-and-forget——**无回执、不可回收** |
 | `send-now` | **即时投递**：live 目标立即注入；非 live 走冷载入（不等调度器 tick）；**同步回执**；**不落注册表** |
 | `cro-guide` | CRO 编写指南——**无参数、纯读**（§4.5） |
 
 - **两条投递路径的分界（R↓）**：预约（无回执）vs 递话（有回执）——**刻意不把两种语义塞进同一动作**。
 - 🔴 **队列语义（真机实测）**：**每个轮次边界只投出一条待投消息、先入先出，其余顺延**——两条同时在队**不会同批到达**；**不丢**；回执只承诺「**已入队**」（不表示目标已执行/已答复；目标在跑轮次时于**轮次边界**生效，**不打断当前轮**）。
-- **已淘汰**：`close` / `archive`（归档改走 `container_fs mv`）/ `health`·`qa`·`summary`（并入 `use`·`list`）/ `hook-develop-guide`（并入 `container_admin msm guide`）/ `wake-list`·`wake-rm`。
+- **已淘汰**：`close`（轨迹无生命周期）/ `health`·`qa`·`summary`（并入 `use`·`list`）/ `hook-develop-guide`（并入 `container_admin msm guide`）/ `wake-list`·`wake-rm`（**不可回收**，已删）。⚠️ `archive` **不是淘汰项**——它移出活跃清单但不碰本体。
 
 **`container_git` 契约要点（提交-推送耦合）**：
 
@@ -387,7 +462,7 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 | container_admin | skiff_admin + acc_msm 管理面（register/deregister/check） | 角色 + MSM 注册管理 + CCC 配置 + 手册 |
 | msm | acc-msm / acc_msm 执行面（list/exec） | MSM 单入口执行 + 发现 |
 | praxis | eap + neat + cce（+ ontology 段） | 可实践理论注入（section: eap/neat/cce/ontology） |
-| container_trajectory | session + session_rebuild；重命名链 `logbook` → `trajectory` → 本名 | 轨迹全周期 + 载体重建（8 动作） |
+| cognitive_trajectory | session + session_rebuild；重命名链 `logbook` → `trajectory` → `container_trajectory` → 本名 | 认知轨迹全周期 + 载体重建（10 动作） |
 | dashboard | acc_kit | health/time/wait |
 | handyman | loop | 白名单模型 worker 编排 |
 | localstore | localstore | 凭据/配置存储 |
@@ -403,7 +478,7 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 
 ### 4.5 CRO（Continuous Re-Occurrence）—— 轨迹自编程唤起
 
-> **为什么写在 §4**：本节契约面由两处交付——`container_trajectory` 的动作 **`cro-guide`**（§4.1）＋ 一份**数据契约**（CCC 侧书写的程序文件）。与 §4.3 MSM 注册表同族：**机制契约挂在 §4**。
+> **为什么写在 §4**：本节契约面由两处交付——`cognitive_trajectory` 的动作 **`cro-guide`**（§4.1）＋ 一份**数据契约**（CCC 侧书写的程序文件）。与 §4.3 MSM 注册表同族：**机制契约挂在 §4**。
 >
 > **解决的问题**：唤起一条轨迹的常规方式为「几点几分唤起我」——而**是否应当唤醒往往不由时间决定**：某条轨迹应在「天亮 + 家里有人 + 非高峰」时才唤醒；**已在执行轮次时不应再次唤起**。⇒ CRO 使**一条轨迹自带一段程序**，由 ACC 每次检查时执行它，**由程序决定「此刻是否应当唤起我、唤起时说什么」**。
 >
@@ -411,7 +486,7 @@ osp（opencode 运行时）与 dsp（DSH 运行时）各自实现了一套 ACC �
 >
 > **为什么入标准**（判据，与 §5.12 同源）：① 那段程序**由 CCC 作者书写**，而 CCC 必须**跨实现可移植**（I4）——某实现不认它时，同一 CCC 在不同实现上**静默**失效（**静默分歧比报错更坏**）；② 契约面（文件位置 / 输入快照 / 输出决策）是**数据契约**。
 >
-> **命名**：`CRO` **指那段程序**（实体名），**不是** §0.1 三环节的第三环本身——来源 = §0.3「Trajectory 在寻找 Agent」，CRO 是「**再发生**」这一环的**自动化**。
+> **命名**：`CRO` **指那段程序**（实体名），**不是** §0.1 三环节的第三环本身——来源 = §0.3「认知轨迹在寻找 Agent」，CRO 是「**再发生**」这一环的**自动化**。
 
 #### 4.5.1 数据契约（CCC 侧）
 
@@ -488,7 +563,7 @@ stdout **一行 JSON**：
 
 #### 4.5.6 指南契约（ACC 内置）
 
-编写指南**属机制**——它是**跨实现一致性的直接来源**。**出口** = `container_trajectory` 的 **`cro-guide`**（**无参数、纯读**）。
+编写指南**属机制**——它是**跨实现一致性的直接来源**。**出口** = `cognitive_trajectory` 的 **`cro-guide`**（**无参数、纯读**）。
 
 **必须含**：① 🔴 **"程序可自测；用开发名写（如 `.dev.ts`）、测试通过再改名为正式名"**——因为「文件在 = 启用」没有开关，**改名这一动作本身即为上线动作**；② 🔴 **一并给出测试参数**（一份**可直接用于自测的快照样例**）。
 **🔴 样例快照必须由装配器实时生成**（不是手抄）：schema 一变样例自动跟着变 ⇒ **结构上**消灭"文档里的样例过期"这一失效模式。
@@ -506,14 +581,16 @@ runner 解析与回退顺序 / stdout 截断上限 / 超时具体取值（须有
 
 | 项 | 契约（任何实现必须满足） |
 |---|---|
-| **位置 + 文件名** | `<CCC 根>/AGENT_SESSIONS/<轨迹目录>/`**`cro-wake-log.json`**——**每轨迹一份、文件名固定**（无日期、无版本、无轨迹名） |
+| **位置 + 文件名** | `<CCC 根>/AGENT_SESSIONS/<轨迹目录>/`**`cro-wake-log.log`**——**每轨迹一份、文件名固定**（无日期、无版本、无轨迹名）。🔴 **形态 = 纯文本行**（不是 JSON）：一行一条，`#` 开头为表头/注释，解析时跳过；**坏行跳过而非整档报错** |
 | **语义** | **每次唤起*尝试*一条**——🔴 **成功与失败都记**。只记成功会留下"**看起来一切正常**"的假象，而"应唤起却未成功"恰恰是最需要可见的那一半 |
 | **保留窗** | **2 日**，且🔴 **程序化**：实现须在**写入时**按窗轮转（窗宽是常量；**无配置键、无人工清理动作**）⇒ 清理与写入**同一笔操作** ⇒ **结构上不存在"忘了清"** |
 | **何时产生** | **只在真的发生过一次唤起尝试时**创建/追加 ⇒ 没有 CRO 的轨迹**零文件** |
-| **🔴 不包含什么** | **判定细节**（`lastDecision` / 阈值 / 环境谓词 / "未唤起"的那些判定）——那些是**程序的主语**。⇒ **不是第二真相源**：同目录两个文件，**主语各一**（程序写 `cro-state.json` =「**我判了什么**」；实现写 `cro-wake-log.json` =「**我把什么送出去了、送成没有**」），**内容不重叠** |
+| **🔴 不包含什么** | **判定细节**（`lastDecision` / 阈值 / 环境谓词 / "未唤起"的那些判定）——那些是**程序的主语**。⇒ **不是第二真相源**：同目录两个文件，**主语各一**（程序写 `cro-state.json` =「**我判了什么**」；实现写 `cro-wake-log.log` =「**我把什么送出去了、送成没有**」），**内容不重叠** |
 | **🔴 失败隔离** | 写流水 / 轮转**失败绝不影响投递与既有链路**——失败只进日志一行 |
 | **🔴 `notReady` 不记** | 「环境未就绪」**不是投递失败** ⇒ **不得**据它记一条失败（记了即为**假失败**） |
-| **实现自由面** | 字段名与内部形状（例：`at` / `ok` / `detail` / `tick` / `reason` / `promptDigest`——**提示词只留摘要**）。**但**：位置、固定文件名、语义（每次尝试）、保留窗**不得改** |
+| **为什么是纯文本而不是 JSON**（判据） | 它是**日志**：人类会 `grep` / `tail` / `awk` 它，且**单行损坏不该毁掉整档**。结构化 JSON 在这两件事上都更差（整档解析失败 = 全部历史不可读）。**需要结构化读取的场合** = 程序自己的 `cro-state.json`。 |
+| **旧档兼容** | 旧名 `cro-wake-log.json` **仍读**（存量轨迹可能正有那份），**只写新 `.log`**。判据 = **新档在就只读新档，否则回落旧档** ⇒ 首次写入**把旧档窗内条目一并搬进新档**（不丢历史），此后旧档不再被读（不重复计入）。 |
+| **实现自由面** | 字段名与内部形状（例：`at` / `ok` / `detail` / `tick` / `reason` / `promptDigest`——**提示词只留摘要**）。**但**：位置、固定文件名、语义（每次尝试）、保留窗、**纯文本形态**不得改 |
 
 **为什么入标准（判据，同 §5.12）**：它是**跨实现可对齐的可观测面**——若某实现不做，同一 CCC 换个实现**可观测性就变了**。
 
@@ -640,7 +717,7 @@ THE VOYAGE — the cognitive lifecycle
    ballast (constraints) before setting course. Verdict: skipping the
    inspection and launching directly = flying uninspected.
 
-7. The Ship's Log → Trajectory Tracking. SESSION.md is the trajectory's log —
+7. The Ship's Log → Cognitive Trajectory Tracking. SESSION.md is the cognitive trajectory's log —
    the persistent body of the voyage; sessions are rebuildable carriers of
    the trajectory. Discard the carrier, keep the log. Unrecorded =
    unvoyaged. Verdict: finishing multi-step work without a progress record
@@ -680,10 +757,10 @@ cognition. A setback is a gap to be filled (read, ask, research), not a
 fault to be hidden. Never disguise or excuse what you do not know;
 not-knowing is a state to be repaired, and reporting it is the first repair.
 
-The session-trajectory relation: a session is the rebuildable carrier of a
-trajectory. SESSION.md is the trajectory's persistent body — it never moves;
+The session–cognitive-trajectory relation: a session is the rebuildable carrier of a
+cognitive trajectory. SESSION.md is the trajectory's persistent body — it never moves;
 the current conversation is a temporary work copy that may be discarded and
-rebuilt (container_trajectory rebuild). Identity belongs to the trajectory, not to any
+rebuilt (cognitive_trajectory rebuild). Identity belongs to the cognitive trajectory, not to any
 session.
 
 MSM principles — machinery before improvisation:
@@ -834,16 +911,16 @@ conversation, or logs.
 The ACC (this plugin) provides the following built-in tools:
 
   container_fs — container filesystem operations (15 subcommands: root/resolve/exists/list/tree/relative/mkdir/rm/mv/cp/touch/append/reveal/info/find)
-  container_trajectory — one trajectory: its persistent body (SESSION.md) + its timeline. Lifecycle: list (inventory + stats) / show / create / use (activate; inline integrity check — silent when fine) / rebuild (clear-and-rebuild this conversation in place, Ship of Theseus); delivery: send-now (deliver one message RIGHT NOW; live target injected immediately, non-live cold-resumed like a direct wake — returns a synchronous receipt) / send-later (one future instant + one message to any trajectory; fire-and-forget — no receipt, no recall) / cro-guide (the CRO programming guide: how to give THIS trajectory its own program that decides when it should be woken)
+  cognitive_trajectory — one cognitive trajectory: its persistent body (SESSION.md) + its timeline. Lifecycle: list (inventory + stats) / show / create / use (activate; inline integrity check — silent when fine) / rebuild (clear-and-rebuild this conversation in place, Ship of Theseus); delivery: send-now (deliver one message RIGHT NOW; live target injected immediately, non-live cold-resumed like a direct wake — returns a synchronous receipt) / send-later (one future instant + one message to any cognitive trajectory; fire-and-forget — no receipt, no recall) / cro-guide (the CRO programming guide: how to give THIS cognitive trajectory its own program that decides when it should be woken)
   dashboard    — always-on container instruments: health (CCC three-principle check + registry integrity) / time (now) / wait (N seconds)
-  container_git— git operations (status/commit/push/log)
+  container_git— git operations (status/commit/push/log/pull/diff)
   msm          — execute a registered CCC MSM: msm(name, args); partial name returns candidates; inspect=true shows usage
   praxis       — actionable theory injection: praxis (index) / praxis eap / praxis neat / praxis cce / praxis ontology
   ontology     — ontology engineering ENGINE (executable): init (write template) / check (M1-M10 structural; level=strict adds L1-L5 hints) / explain (summary) / verify (V1-V4 runtime compliance) / review (semantic-review prompt) / compliance (axiom-vs-skill checklist). Sibling of `praxis ontology` — that one is the METHOD TEXT, this one RUNS it. path must stay inside the container; the receipt carries the engine exit code (0/1/2/4) and the engine text verbatim, so read it rather than assuming success
-  handyman     — delegate work to a worker agent on a CCC-whitelisted model; mode="foreground" (default) = child agent(s) run once and return their final text (jobs=[...] fans out in parallel, cap 10, per-job model); mode="background" = loop-validated worker (completion code + round cap + restart + progress file), jobs=[] orchestrates parallel work
+  cheap-worker     — delegate work to a worker agent on the CCC-configured model; one serial child per task, returns its final text. `jobs=[...]` fans out in parallel (cap 10, results keep your order). No loop, no completion code, no progress file. The model is NOT selectable per call (read from the CCC config); a worker's tool set excludes cheap-worker itself
   serenity-skill-creator — creator for serenity-skills (this container's enhanced skill standard): guide (authoring/optimization method — read first) / create <name> (scaffold SKILL.md + skill.ttl + references/, base-chain import path computed) / check <name> (A1 structural + A2 base-chain; three states: modeled-ok / plain-skill / modeled-but-check-could-not-run) / review <name> (C tier: axiom-vs-text compliance question list, half-mechanical) / index <name> (preview the second-layer resource list the model will see) / status (which skills are modeled). A skill is "modeled" iff it has a file named exactly skill.ttl next to SKILL.md; a plain skill is NOT an anomaly. Only `create` writes, and it refuses an existing directory
   localstore   — ACC local credential/config storage (CCC-root localstore.json; git policy localstore.gitTrack default deny)
-  container_admin — container administration (the maintenance bay): role (Skiff roles: guide/validate/apply/list) / msm (register/deregister/check/guide/catalog/ccc-config) / config (view)
+  container_admin — container administration (the maintenance bay): config — CCC configuration: docs (usage-manual index) / docs <chapter> (one chapter in full) / view (current values) + 轨迹约束 (guide/validate/apply/list); msm — MSM registry management (register/deregister/check quality DC-M1~M4) + manuals (guide dev manual / catalog ACC capability directory / ccc-config CCC configuration reference). Execution of registered MSMs belongs to the msm tool; this tool manages the container.
 
 MSM call (registered CCC MSMs, deterministic Mech & Semi-Mech):
   Execute:       msm("<name>", ["<arg1>", "<arg2>"])   — run a registered MSM directly (partial name returns matching candidates)
@@ -905,7 +982,35 @@ never reuse a prior code.
 - 活跃会话解析机制宿主自定；**无活跃会话时整块省略**
 - **预声明必附**：Session 块必须附 §5.11 的 TRAJECTORY-ASSISTANT 预声明（机制先于提醒）
 - **todowrite 首项无 priority**（DSH 平台 todowrite schema 无 priority 字段——如宿主 schema 支持可保留）
-- 🔴 **Skiff 角色会话不注入本块**（也不注入 §5.1~§5.8 默认装配）：角色用 CCC 定义段**全替换**。
+- 🔴 **带组织章程的轨迹（原"角色"）用「轨迹章程层」替换表达层**：其身份与章程来自该轨迹自己的 `PROMPT.md`（§5.9a），**不注入默认人格/表达层**；但**容器层与质量层不可被替换**（安全与质量底线永远在）。
+
+### 5.9a 轨迹章程层（`PROMPT.md`）
+
+一条认知轨迹可以带**自己的章程**：`AGENT_SESSIONS/<轨迹目录>/PROMPT.md`。
+
+| 项 | 契约 |
+|---|---|
+| **位置 + 文件名** | `<CCC 根>/AGENT_SESSIONS/<轨迹目录>/PROMPT.md`（固定名） |
+| **语义** | 这条轨迹**"我是谁 / 我按什么工作 / 我的边界 / 我与某个人的约定"** —— 它**声明身份与章程**，**不声明能力**（能力面归 `trajectory.json` 的白名单与工具 schema） |
+| **与装配的层级关系** | 见 §5.9b 四层模型：**它只能替换/收窄表达层，容器层与质量层永不被替换** |
+| **热生效** | **按 mtime 热重载**——改文件即生效，不重启、不重建会话 |
+| **可选** | 没有这个文件的轨迹是**普通轨迹**，照常装配（不是错误、不需要占位） |
+| **防误读** | 它不是"人格"：人格是**表达风格**，章程是**工作约定**。历史实现里的"角色表"（`skiff.roles`）**已退役**（§3.1c）——那条路会长出"平行概念"，而轨迹目录里的一份文件不会。 |
+
+### 5.9b 四层装配模型（谁能覆盖谁）
+
+装配内容按**可覆盖性**分四层。🔴 **判据 = "这一层被覆盖会不会动摇安全或质量底线"**：
+
+| 层 | 内容 | 可被轨迹覆盖？ |
+|---|---|---|
+| **① 容器层** | ACC 身份 / Metaphor / Principles / CCE / **操作边界** | 🔴 **永不** —— 它定义"在容器里意味着什么" |
+| **② 质量层** | EAP（或 Persona 位） | 🔴 **永不** —— 它是输出质量的底线 |
+| **③ 轨迹章程层** | 该轨迹的 `PROMPT.md`（§5.9a） | ✅ **可以补充/收窄**，但**只能在本层内** |
+| **④ 表达层** | 语气 / 措辞 / 语言偏好 | ✅ 轨约束**只能收窄**，不能放开容器层与质量层 |
+
+> **为什么要写死"不可覆盖"**（R↓）：旧实现允许"整段替换 ACC 注入"。它带来一个**安静的失效**——
+> 被替换的实例**拿不到容器身份与质量约束**，而它自己**不会知道自己缺了什么**（读到的就是全部）。
+> ⇒ **层级不是分格，是权限**：越靠下的层越不能放开上面两层。
 
 ### 5.10 Induction 注入时机（装配时机）
 
@@ -959,7 +1064,7 @@ never reuse a prior code.
 
 | 来源 | 落点 | 语义 |
 |---|---|---|
-| **CCC 级** | `<CCC>/.opencode/serenity.json` 的 **`trajectory.skills`** | **本 CCC 的每条轨迹都带**（容器给的底座）——**含 skiff 角色会话** |
+| **CCC 级** | `<CCC>/.opencode/serenity.json` 的 **`trajectory.skills`** | **本 CCC 的每条轨迹都带**（容器给的底座）——**含带章程的轨迹** |
 | **轨迹级** | 该轨迹 `SESSION.md` 顶部 frontmatter 的 **`skills:`** | **这条轨迹额外的** |
 
 - **合并规则**：**CCC 级在前、轨迹级追加、同名去重取首次位置**。⇒ 容器提供底座、单条轨迹仍可追加自己的额外项（当初否决"纯 CCC 全局"的理由即：全局化会**丢失 per-trajectory**）。
@@ -1118,7 +1223,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 要成为"符合 Serenity-ACC 标准的 agent 工具"，适配层必须：
 
-- [ ] 提供 §4 全部最小公共集工具（子命令/动作面以 §4.1 为准：`container_git` 6 动作、`container_trajectory` 8 动作、`ontology` 7 动作、`praxis` 4 段）
+- [ ] 提供 §4 全部最小公共集工具（子命令/动作面以 §4.1 为准：`container_git` 6 动作、`cognitive_trajectory` 10 动作、`ontology` 7 动作、`praxis` 4 段）
 - [ ] 实现 §4.1 的**域外全局隐藏**（不在 CCC 内 ⇒ 全部 ACC 工具从模型清单移除，且**两档尝试**、档①失败不报警）
 - [ ] 实现 §5 Induction（骨架内容块与标准一致，仅动态字段差异）；**Persona 未配置时与无 persona 逐字节一致**
 - [ ] 实现 §5.11 trajectory-assistant 提醒（计分/阈值/预声明/ACK 协议 + token 体系**含 `SCRATCH PRUNE`**）
@@ -1205,19 +1310,21 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 
 | 标准条款 | osp（opencode-serenity-plugin） | dsp（dsh-serenity-hooks，**领先实现**） | 核对 |
 |---------|--------------------------------|----------------------------------------|------|
-| §3 CCC 结构 | 基础结构 + mech-registry 旧位 | 同 + `.dsh/` 并存；mech-registry 单级聚合；新增 `REBUILD-TODO.md` / `_tmp/acc-usage.json` / `cro-wake-log.json` / `.restrict-diag.json` | ⚠️ 待同步 |
-| §3.0 结构件三线 | —— | SESSION.md（权威，7 段）/ REBUILD-TODO.md（非权威，10 KB 硬上限）/ cro-wake-log.json（2 日窗） | ⚠️ 待同步 |
-| §3.1 配置 | `.opencode/serenity.json` | 同（`.dsh` 回退）；退役键 `wakeSchedulerEnabled` / `rebuildEnabled` **静默忽略** | ⚠️ 待同步（键集） |
+| §3 CCC 结构 | 基础结构 + mech-registry 旧位 | 同 + `.dsh/` 并存；mech-registry 单级聚合；新增 `REBUILD-TODO.md` / `_tmp/acc-usage.json` / `trajectory.json` / `cro-wake-log.log` / `.restrict-diag.json` | ⚠️ 待同步 |
+| §3.0 结构件三线 | —— | SESSION.md（权威，7 段）/ REBUILD-TODO.md（非权威，10 KB 硬上限）/ cro-wake-log.log（纯文本，2 日窗） | ⚠️ 待同步 |
+| §3.0.1 轨迹声明面 | —— | `trajectory.json` 收拢约束 ＋ `uid` ＋ `cro.host`；文件名族 `trajectory.json` → `trajectory-constraint.json` → `skiff.json`（认族不认名，写只写新名） | ⚠️ 待新增 |
+| §3.1 配置 | `.opencode/serenity.json` | 同（`.dsh` 回退）；退役键 `wakeSchedulerEnabled` / `rebuildEnabled` / `skiff` **静默忽略** | ⚠️ 待同步（键集） |
 | §3.1(b) 配置分层 | —— | 面板层 > 部署层 > 内建缺省；volatile 键硬约束 | ⚠️ 待同步 |
 | §3.2 入口技能 | `.serenity` 内容 + `.opencode/skills/*-serenity` | **三源**（+ `.dsh/entry-skill`） | ⚠️ 待同步 |
 | §3.3 用量统计 | —— | `_tmp/acc-usage.json`（loads / injections 口径分离、只记名字、原子写） | ⚠️ 待同步 |
-| §4 工具 | 旧名族（待改名） | **常驻 11 ＋ 条件 3**；含 `ontology` / `serenity-skill-creator` / `diagram` | ⚠️ 待改名对齐 |
+| §4 工具 | 旧名族（待改名） | **常驻 11 ＋ 条件 3**；含 `ontology` / `serenity-skill-creator` / `diagram`；轨迹工具已更名 `cognitive_trajectory` | ⚠️ 待改名对齐 |
+| §4.1 认知轨迹工具 | `container_trajectory`（8 动作） | **`cognitive_trajectory`（10 动作**：+ `archive` / `uid`） | ⚠️ 待改名对齐 |
 | §4.1 域外全局隐藏 | —— | 不在 CCC 内 ⇒ 全工具面从模型清单移除（**两档尝试**，档①失败不报警） | ⚠️ 待新增 |
 | §4.1 git 契约 | 同源语义（osp 为 spec 源） | 6 动作；commit 默认随后 push；`paths` / `ahead`·`behind`；push 判据 = `--porcelain` ref 行 | ✅（源头）/ ⚠️ 镜像行待收敛 |
 | §4.2 条件可见工具 | 部分（im-bridge 复用） | `im-bridge` / `acc-diag` / `diagram`；`diagram` **缺省关且关时不注册** | ⚠️ 待同步 |
 | §4.3 registry 保护 | 待同步 | 单级聚合 + 写 deny 读 allow + 健康检查段 | ⚠️ 待同步 |
 | §4.5 CRO | **待新增** | 已落地：仅 spawn 不 import / 快照契约 / 决策契约 / 独立总闸 `croEnabled` | ⚠️ 待新增 |
-| §4.5.8 唤起流水 | **待新增** | `cro-wake-log.json`（固定名 + 原子写 + 2 日窗裁剪；`notReady` 不记） | ⚠️ 待新增 |
+| §4.5.8 唤起流水 | **待新增** | `cro-wake-log.log`（**纯文本行** + 固定名 + 原子写 + 2 日窗裁剪；`notReady` 不记；旧 `.json` 仍读） | ⚠️ 待新增 |
 | §5.0 骨架 | 8 骨架块 + 渲染层（无 Persona / 无 Code Mode 行） | 固定位 9；EAP 位可被 **Persona** 替换；末尾可追加 **Code Mode 适配行** | ⚠️ 待同步 |
 | §5.1 ACC 块 | 含 Root 与工具清单 | 去 Root；工具清单独立成块；末行 = "call msm() with no arguments…" | ⚠️ 待同步 |
 | §5.2 Metaphor | **无（待新增）** | 三层骨架 10 条星舰全文 | ⚠️ 待新增 |
@@ -1229,6 +1336,8 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 | §5.7 SKILL 全文 | 注入入口 skill 原文 | 原文直推无包裹头 + 空行分隔 + **第二层披露树** | ⚠️ 待同步 |
 | §5.8 Tools | **待新增独立块** | 常驻行 + MSM 协议 4 行；与实现**逐字**镜像 | ⚠️ 待新增 |
 | §5.9 Session | 内存活跃会话 | 会话事件 + 标题恢复链；**7 段格式 + 粒度纪律 + RESUME 读法** | ⚠️ 待同步（文本） |
+| §5.9a 轨迹章程 | **待新增** | `PROMPT.md` 固定名、按 mtime 热重载、只声明身份与章程不声明能力 | ⚠️ 待新增 |
+| §5.9b 四层装配模型 | **待新增** | 容器层/质量层**不可覆盖**；轨迹章程层可补充；表达层只能收窄 | ⚠️ 待新增 |
 | §5.10 注入时机 | system.transform / messages.transform / session.compacting | 会话启动 / 提示提交 / 系统提示 section（全局 + scoped）/ compact | ✅ |
 | §5.11 assistant | 旧名（阈值与码） | token 单一真相源（含 **SCRATCH PRUNE**）+ 两条体积提醒 + 便签交接协议 | ⚠️ 待同步 |
 | §5.12 skill 供给 | **待新增** | 两条来源并集（CCC 级 `trajectory.skills` + 轨迹级 frontmatter）；缺失响亮 + 名字安全 + 32 KB 守卫 | ⚠️ 待新增 |
@@ -1240,7 +1349,7 @@ ACC 的机械约束（模型不可绕过）由宿主拦截缝承载。标准要�
 **核对结论**：
 
 - **dsp 是领先实现**——§5 各装配块文本与 §4.1 工具契约的**实证来源**即它。**当前版本号与工具数请查 `dashboard health` / 其 `CHANGELOG.md`**（本表刻意不写）。
-- **osp 侧待按本 spec 同步**：§3（注册表位置 + 新结构件）/ §3.1~3.3 / §4（工具改名 + 域外隐藏 + 条件可见族）/ §4.5 + §4.5.8 / §5.1·5.2·5.3·5.4·5.6·5.7（第二层）·5.8·5.9·5.11·5.12 / §8（serenity-skill）。
+- **osp 侧待按本 spec 同步**：§3（注册表位置 + 新结构件 + `trajectory.json` 收拢）/ §3.1~3.3 / §4（工具改名 **含 `cognitive_trajectory`** + 域外隐藏 + 条件可见族）/ §4.5 + §4.5.8 / §5.1·5.2·5.3·5.4·5.6·5.7（第二层）·5.8·5.9·**5.9a·5.9b**·5.11·5.12 / §8（serenity-skill）。
 - **pi-serenity-plugin** 按本标准实现即可三端对齐。
 - ⚠️ **本表不记"某实现当前是代码态还是已发布"**——那是**会漂的当前值**。
 
